@@ -537,6 +537,27 @@ files = [
 ]
 
 [[package]]
+name = "patito"
+version = "0.6.1"
+description = "A dataframe modelling library built on top of polars and pydantic."
+optional = false
+python-versions = ">=3.9,<4.0"
+files = [
+    {file = "patito-0.6.1-py3-none-any.whl", hash = "sha256:e66b5923ccd74eaa0559d78ddda6210dce21f641418bef96b7ceb92fe849bf4b"},
+    {file = "patito-0.6.1.tar.gz", hash = "sha256:82c879ed49bfa2536d48344bfcfab5e3dc283a95ab7ac10a391e23c09b694885"},
+]
+
+[package.dependencies]
+polars = ">=0.20.1"
+pydantic = ">=2.0.0"
+typing-extensions = "*"
+
+[package.extras]
+caching = ["pyarrow (>=5.0.0)"]
+docs = ["Sphinx (<7)", "sphinx-autobuild", "sphinx-autodoc-typehints", "sphinx-rtd-theme", "sphinx-toolbox", "sphinxcontrib-mermaid"]
+pandas = ["pandas"]
+
+[[package]]
 name = "pockets"
 version = "0.9.1"
 description = "A collection of helpful Python tools!"
@@ -1485,4 +1506,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "2b7702e189368e7dfe29f51040e184c00859aafb945475a4eb2e038648503f56"
+content-hash = "8aea87144157a782fbe903642de899b871055f5ded9854849c821e6d4fbd580b"
