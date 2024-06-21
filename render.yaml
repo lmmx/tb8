@@ -1,0 +1,9 @@
+services:
+  - type: web
+    runtime: python
+    name: tb8
+    repo: https://github.com/lmmx/tb8
+    region: frankfurt
+    plan: free
+    buildCommand: ./install_mongod.sh && poetry install
+    startCommand: ./mongodb/bin/mongod --config ./mongodb/mongod.conf --fork && serve
