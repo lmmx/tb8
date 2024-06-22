@@ -91,7 +91,7 @@ export default function StationPointsExplorer() {
     setError(null);
     setPoints(null);
     try {
-      const query = `SELECT * FROM self WHERE StationName = '${selectedStation.value}';`;
+      const query = `SELECT * FROM self WHERE StationName = '${selectedStation.value.replace("'", "''")}';`;
       const response = await fetch(`${API_BASE_URL}/station-points?query=${encodeURIComponent(query)}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
