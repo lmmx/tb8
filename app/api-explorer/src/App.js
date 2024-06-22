@@ -135,14 +135,6 @@ export default function StationPointsExplorer() {
         </div>
       )}
       {renderMap()}
-      {results && (
-        <div>
-          <h2 className="text-2xl font-bold mb-2">Results:</h2>
-          <pre className="bg-gray-100 p-4 rounded overflow-x-auto">
-            {JSON.stringify(results, null, 2)}
-          </pre>
-        </div>
-      )}
     </div>
   );
 }
