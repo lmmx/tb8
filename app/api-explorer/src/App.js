@@ -10,7 +10,7 @@ const API_BASE_URL = 'https://tb8.onrender.com';
 
 // Custom icon
 const customIcon = new L.Icon({
-    iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
@@ -37,8 +37,11 @@ function MapContent({ points }) {
   return (
     <>
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url="https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png"
+        attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        subdomains='abcd'
+        minZoom={0}
+        maxZoom={18}
       />
       {points && points.map((point) => (
         <Marker key={point.UniqueId} position={[point.Lat, point.Lon]} icon={customIcon}>
@@ -134,7 +137,7 @@ export default function StationPointsExplorer() {
           <div className="mt-2 p-2 bg-gray-100 rounded">
             <h3 className="font-bold">Legend:</h3>
             <div className="flex items-center">
-              <img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" alt="Station Marker" className="h-6 mr-2" />
+              <img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="Station Marker" className="h-6 mr-2" />
               <span>Station Point</span>
             </div>
           </div>
