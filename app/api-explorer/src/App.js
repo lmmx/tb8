@@ -72,7 +72,9 @@ function MapContent({ journey, centroids }) {
 
   useEffect(() => {
     if (journey && journey.stations.length > 0) {
-      const bounds = L.latLngBounds(journey.stations.map(station => [station.lat, station.lon]));
+      const bounds = L.latLngBounds(journey.stations.flatMap(station => 
+        station.points.map(point => [point.lat, point.lon])
+      ));
       map.fitBounds(bounds);
     } else {
       map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
@@ -85,23 +87,25 @@ function MapContent({ journey, centroids }) {
         url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>'
       />
-      {journey && journey.stations.map((station) => {
-        const lowestZone = getLowestFareZone(station.fareZones);
-        const color = getFareZoneColor(lowestZone);
-        return (
-          <Marker key={station.id} position={[station.lat, station.lon]} icon={createStationIcon(color)}>
-            <Popup>
-              <div className="custom-popup">
-                <h3 className="font-bold">{station.name}</h3>
-                <p>Area: {station.area}</p>
-                <p>Level: {station.level}</p>
-                <p>Fare Zones: {station.fareZones}</p>
-                <p>WiFi: {station.wifi ? 'Available' : 'Not Available'}</p>
-              </div>
-            </Popup>
-          </Marker>
-        );
-      })}
+      {journey && journey.stations.flatMap(station => 
+        station.points.map(point => {
+          const lowestZone = getLowestFareZone(point.fareZones);
+          const color = getFareZoneColor(lowestZone);
+          return (
+            <Marker key={point.id} position={[point.lat, point.lon]} icon={createStationIcon(color)}>
+              <Popup>
+                <div className="custom-popup">
+                  <h3 className="font-bold">{station.name}</h3>
+                  <p>Area: {point.area}</p>
+                  <p>Level: {point.level}</p>
+                  <p>Fare Zones: {point.fareZones}</p>
+                  <p>WiFi: {point.wifi ? 'Available' : 'Not Available'}</p>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })
+      )}
       {centroids && centroids.map((centroid) => {
         const lowestZone = getLowestFareZone(centroid.fareZones);
         const color = getFareZoneColor(lowestZone);
@@ -152,21 +156,30 @@ const fetchJourneyData = async (stationNames) => {
   const response = await fetch(`${API_BASE_URL}/station-points?query=${encodeURIComponent(query)}`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
-  return data.results.filter(point => 
-    typeof point.Lat === 'number' && 
-    typeof point.Lon === 'number' &&
-    !isNaN(point.Lat) && 
-    !isNaN(point.Lon)
-  ).map(point => ({
-    id: point.UniqueId,
-    name: point.StationName,
-    lat: point.Lat,
-    lon: point.Lon,
-    area: point.AreaName,
-    level: point.Level,
-    fareZones: point.FareZones,
-    wifi: point.Wifi
-  }));
+  
+  // Group points by station name
+  const stationMap = data.results.reduce((acc, point) => {
+    if (typeof point.Lat === 'number' && typeof point.Lon === 'number' && !isNaN(point.Lat) && !isNaN(point.Lon)) {
+      if (!acc[point.StationName]) {
+        acc[point.StationName] = {
+          name: point.StationName,
+          points: []
+        };
+      }
+      acc[point.StationName].points.push({
+        id: point.UniqueId,
+        lat: point.Lat,
+        lon: point.Lon,
+        area: point.AreaName,
+        level: point.Level,
+        fareZones: point.FareZones,
+        wifi: point.Wifi
+      });
+    }
+    return acc;
+  }, {});
+
+  return Object.values(stationMap);
 };
 
 const fetchCentroids = async () => {
@@ -190,7 +203,9 @@ const fetchCentroids = async () => {
 };
 
 const calculateJourneyPath = (stations) => {
-  return stations.map(station => [station.lat, station.lon]);
+  return stations.flatMap(station => 
+    station.points.map(point => [point.lat, point.lon])
+  );
 };
 
 export default function JourneyPlanner() {
@@ -223,10 +238,12 @@ export default function JourneyPlanner() {
           const stationNames = selectedStations.map(station => station.value);
           const journeyData = await fetchJourneyData(stationNames);
           const journeyPath = calculateJourneyPath(journeyData);
-          setJourney({
+          const newJourney = {
             stations: journeyData,
             path: journeyPath
-          });
+          };
+          setJourney(newJourney);
+          console.log('Journey Data:', newJourney);
         } catch (err) {
           setError(err.message);
         } finally {
@@ -250,6 +267,7 @@ export default function JourneyPlanner() {
       stations: journey.stations,
       path: journey.path,
       totalStations: journey.stations.length,
+      totalPoints: journey.stations.reduce((sum, station) => sum + station.points.length, 0),
       totalDistance: calculateTotalDistance(journey.path),
       fareZones: calculateFareZones(journey.stations)
     };
@@ -271,9 +289,16 @@ export default function JourneyPlanner() {
   const calculateFareZones = (stations) => {
     const zones = new Set();
     stations.forEach(station => {
-      station.fareZones.split('|').forEach(zone => zones.add(parseInt(zone)));
+      station.points.forEach(point => {
+        point.fareZones.split('|').forEach(zone => zones.add(parseInt(zone)));
+      });
     });
     return Array.from(zones).sort((a, b) => a - b);
+  };
+
+  // Function to log journey data to console
+  const logJourneyData = () => {
+    console.log('Current Journey Data:', getJourneyData());
   };
 
   return (
@@ -336,6 +361,12 @@ export default function JourneyPlanner() {
                   <p>Total Stations: {journey.stations.length}</p>
                   <p>Total Distance: {calculateTotalDistance(journey.path)} units</p>
                   <p>Fare Zones: {calculateFareZones(journey.stations).join(', ')}</p>
+                  <button 
+                    onClick={logJourneyData}
+                    className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  >
+                    Log Journey Data to Console
+                  </button>
                 </div>
               )}
             </div>
