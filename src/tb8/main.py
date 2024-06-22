@@ -19,7 +19,7 @@ port = int(os.environ.get("PORT", 4000))
 lines = tube.load_lines()
 lines_by_station = tube.load_lines_by_station()
 stations = tube.load_stations()
-station_points = tube.load_station_points()
+station_points = tube.load_station_points().join(stations, on="StationUniqueId")
 
 
 def time_now() -> AwareDatetime:
