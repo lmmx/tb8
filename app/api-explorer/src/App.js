@@ -8,16 +8,6 @@ import L from 'leaflet';
 
 const API_BASE_URL = 'https://tb8.onrender.com';
 
-// Custom icons
-const stationIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
 // Updated color mapping function based on fare zone
 const getFareZoneColor = (fareZone) => {
     const zoneColors = {
@@ -41,17 +31,34 @@ const getLowestFareZone = (fareZones) => {
     return zones.length > 0 ? Math.min(...zones) : 7;
 };
 
-// Create a custom cross icon for centroids
-const createCrossIcon = (color, size = 20) => {
+// Create a custom tube-style icon for stations
+const createStationIcon = (color, size = 24) => {
     const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19"></line>
-      <line x1="5" y1="12" x2="19" y2="12"></line>
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" fill="black" />
+      <circle cx="12" cy="12" r="8" fill="${color}" />
     </svg>`;
 
     return L.divIcon({
         html: svg,
-        className: 'custom-cross-icon',
+        className: 'custom-station-icon',
+        iconSize: [size, size],
+        iconAnchor: [size/2, size/2],
+    });
+};
+
+// Create a custom tube-style icon for centroids (slightly smaller)
+const createCentroidIcon = (color, size = 20) => {
+    const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" fill="black" />
+      <circle cx="12" cy="12" r="8" fill="${color}" />
+      <circle cx="12" cy="12" r="3" fill="black" />
+    </svg>`;
+
+    return L.divIcon({
+        html: svg,
+        className: 'custom-centroid-icon',
         iconSize: [size, size],
         iconAnchor: [size/2, size/2],
     });
@@ -78,19 +85,23 @@ function MapContent({ points, centroids }) {
         url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>'
       />
-      {points && points.map((point) => (
-        <Marker key={point.UniqueId} position={[point.Lat, point.Lon]} icon={stationIcon}>
-          <Popup>
-            <div className="custom-popup">
-              <h3 className="font-bold">{point.StationName}</h3>
-              <p>Area: {point.AreaName}</p>
-              <p>Level: {point.Level}</p>
-              <p>Fare Zones: {point.FareZones}</p>
-              <p>WiFi: {point.Wifi ? 'Available' : 'Not Available'}</p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {points && points.map((point) => {
+        const lowestZone = getLowestFareZone(point.FareZones);
+        const color = getFareZoneColor(lowestZone);
+        return (
+          <Marker key={point.UniqueId} position={[point.Lat, point.Lon]} icon={createStationIcon(color)}>
+            <Popup>
+              <div className="custom-popup">
+                <h3 className="font-bold">{point.StationName}</h3>
+                <p>Area: {point.AreaName}</p>
+                <p>Level: {point.Level}</p>
+                <p>Fare Zones: {point.FareZones}</p>
+                <p>WiFi: {point.Wifi ? 'Available' : 'Not Available'}</p>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
       {centroids && centroids.map((centroid) => {
         const lowestZone = getLowestFareZone(centroid.FareZones);
         const color = getFareZoneColor(lowestZone);
@@ -98,7 +109,7 @@ function MapContent({ points, centroids }) {
           <Marker 
             key={`centroid-${centroid.StationUniqueId}`} 
             position={[centroid.Lat, centroid.Lon]} 
-            icon={createCrossIcon(color, 24)}
+            icon={createCentroidIcon(color)}
           >
             <Popup>
               <div className="custom-popup">
@@ -215,7 +226,6 @@ export default function StationPointsExplorer() {
           </div>
           <div className="w-full md:w-1/3">
             <div className="bg-gray-50 rounded-lg p-4 shadow-md mb-6">
-              <h2 className="text-2xl font-semibold mb-4 text-gray-700">Station Selector</h2>
               <div className="mb-4">
                 <label htmlFor="station-select" className="block mb-2 font-medium text-gray-600">
                   Select a Station:
@@ -264,15 +274,26 @@ export default function StationPointsExplorer() {
             <div className="bg-gray-50 rounded-lg p-4 shadow-md">
               <h3 className="text-xl font-semibold mb-3 text-gray-700">Legend</h3>
               <div className="flex items-center mb-3">
-                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="Station Marker" className="h-6 mr-2" />
+                <svg width="24" height="24" viewBox="0 0 24 24" className="mr-2">
+                  <circle cx="12" cy="12" r="10" fill="black" />
+                  <circle cx="12" cy="12" r="8" fill="white" />
+                </svg>
                 <span className="text-gray-600">Station Point</span>
+              </div>
+              <div className="flex items-center mb-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" className="mr-2">
+                  <circle cx="12" cy="12" r="10" fill="black" />
+                  <circle cx="12" cy="12" r="8" fill="white" />
+                  <circle cx="12" cy="12" r="3" fill="black" />
+                </svg>
+                <span className="text-gray-600">Station Centroid</span>
               </div>
               <div className="space-y-2">
                 {[1, 2, 3, 4, 5, 6, 7].map(zone => (
                   <div key={zone} className="flex items-center bg-white p-2 rounded shadow">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getFareZoneColor(zone)} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <svg width="24" height="24" viewBox="0 0 24 24" className="mr-2">
+                      <circle cx="12" cy="12" r="10" fill="black" />
+                      <circle cx="12" cy="12" r="8" fill={getFareZoneColor(zone)} />
                     </svg>
                     <span className="text-sm text-gray-600">Zone {zone}{zone === 7 ? '+' : ''}</span>
                   </div>
