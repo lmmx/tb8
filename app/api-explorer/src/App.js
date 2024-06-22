@@ -104,20 +104,20 @@ function MapContent({ journey, allCentroids }) {
           );
         })
       )}
-      {journey && journey.stations.map(station => {
-        const lowestZone = getLowestFareZone(station.centroid.fareZones);
+      {allCentroids && Object.values(allCentroids).map((centroid) => {
+        const lowestZone = getLowestFareZone(centroid.fareZones);
         const color = getFareZoneColor(lowestZone);
         return (
           <Marker 
-            key={`centroid-${station.centroid.id}`} 
-            position={[station.centroid.lat, station.centroid.lon]} 
+            key={`centroid-${centroid.id}`} 
+            position={[centroid.lat, centroid.lon]} 
             icon={createCentroidIcon(color)}
           >
             <Popup>
               <div className="custom-popup">
-                <h3 className="font-bold">{station.name}</h3>
-                <p>Fare Zones: {station.centroid.fareZones}</p>
-                <p>WiFi: {station.centroid.wifi ? 'Available' : 'Not Available'}</p>
+                <h3 className="font-bold">{centroid.name}</h3>
+                <p>Fare Zones: {centroid.fareZones}</p>
+                <p>WiFi: {centroid.wifi ? 'Available' : 'Not Available'}</p>
               </div>
             </Popup>
           </Marker>
