@@ -18,14 +18,23 @@ const stationIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-const centroidIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
+// Create a custom cross icon for centroids
+const createCrossIcon = (color = '#3388ff', size = 20) => {
+    const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>`;
+
+    return L.divIcon({
+        html: svg,
+        className: 'custom-cross-icon',
+        iconSize: [size, size],
+        iconAnchor: [size/2, size/2],
+    });
+};
+
+const centroidIcon = createCrossIcon('#3388ff', 24);
 
 const DEFAULT_CENTER = [51.505, -0.09];
 const DEFAULT_ZOOM = 10;
@@ -178,7 +187,10 @@ export default function StationPointsExplorer() {
               <span>Station Point</span>
             </div>
             <div className="flex items-center mt-1">
-              <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" alt="Centroid Marker" className="h-6 mr-2" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3388ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="mr-2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
               <span>Station Centroid</span>
             </div>
           </div>
