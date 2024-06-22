@@ -9,4 +9,4 @@ services:
     startCommand: ./mongodb/bin/mongod --config ./mongodb/mongod.conf --fork && serve
     buildFilter:
       ignoredPaths:
-        - app
+        - app/**
