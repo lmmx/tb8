@@ -7,4 +7,6 @@ services:
     plan: free
     buildCommand: ./install_mongod.sh && poetry install
     startCommand: ./mongodb/bin/mongod --config ./mongodb/mongod.conf --fork && serve
-    ignoreFilter: app
+    buildFilter:
+      ignoredPaths:
+        - app
