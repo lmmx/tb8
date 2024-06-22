@@ -52,7 +52,8 @@ export default function StationPointsExplorer() {
     setError(null);
     setResults(null);
     try {
-      const query = `SELECT * FROM self WHERE StationName = '${selectedStation.value}';`;
+      const escapedStationName = selectedStation.value.replace(/'/g, "''");
+      const query = `SELECT * FROM self WHERE StationName = '${escapedStationName}';`;
       const response = await fetch(`${API_BASE_URL}/station-points?query=${encodeURIComponent(query)}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -47,6 +47,10 @@ class Response(BaseModel):
     context: MetaData
     results: list[dict]
 
+class Error(BaseModel):
+    context: MetaData
+    error: str
+
 
 @app.get("/")
 def read_root():
@@ -55,38 +59,68 @@ def read_root():
 
 @app.get("/lines")
 def read_lines(request: Request, query: str = "SELECT * FROM self;"):
+    print(f"Received {query=}")
     received = time_now()
-    results = lines.sql(query).to_dicts()
-    return Response(
-        context=MetaData(request_time=received, query=query), results=results
-    )
+    try:
+        results = lines.sql(query).to_dicts()
+    except Exception as exc:
+        return Error(
+            context=MetaData(request_time=received, query=query), error=str(exc)
+        )
+    else:
+        return Response(
+            context=MetaData(request_time=received, query=query), results=results
+        )
 
 
 @app.get("/lines-by-station")
 def read_lines_by_station(request: Request, query: str = "SELECT * FROM self;"):
+    print(f"Received {query=}")
     received = time_now()
-    results = lines_by_station.sql(query).to_dicts()
-    return Response(
-        context=MetaData(request_time=received, query=query), results=results
-    )
+    try:
+        results = lines_by_station.sql(query).to_dicts()
+    except Exception as exc:
+        return Error(
+            context=MetaData(request_time=received, query=query), error=str(exc)
+        )
+    else:
+        return Response(
+            context=MetaData(request_time=received, query=query), results=results
+        )
 
 
 @app.get("/stations")
 def read_stations(request: Request, query: str = "SELECT * FROM self;"):
+    print(f"Received {query=}")
     received = time_now()
-    results = stations.sql(query).to_dicts()
-    return Response(
-        context=MetaData(request_time=received, query=query), results=results
-    )
+    try:
+        results = stations.sql(query).to_dicts()
+    except Exception as exc:
+        return Error(
+            context=MetaData(request_time=received, query=query), error=str(exc)
+        )
+    else:
+        return Response(
+            context=MetaData(request_time=received, query=query), results=results
+        )
+
 
 
 @app.get("/station-points")
 def read_station_points(request: Request, query: str = "SELECT * FROM self;"):
+    print(f"Received {query=}")
     received = time_now()
-    results = station_points.sql(query).to_dicts()
-    return Response(
-        context=MetaData(request_time=received, query=query), results=results
-    )
+    try:
+        results = station_points.sql(query).to_dicts()
+    except Exception as exc:
+        return Error(
+            context=MetaData(request_time=received, query=query), error=str(exc)
+        )
+    else:
+        return Response(
+            context=MetaData(request_time=received, query=query), results=results
+        )
+
 
 
 def serve():
