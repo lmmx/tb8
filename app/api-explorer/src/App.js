@@ -27,11 +27,11 @@ const getFareZoneColor = (fareZone) => {
         4: '#FF9900', // Mellow Orange
         5: '#AE84DD', // Pastel Purple
         6: '#FFC0CB', // Baby Pink
-        7: '#E6E6E6', // Pale White/Grey
-        8: '#E6E6E6', // Pale White/Grey
-        9: '#E6E6E6'  // Pale White/Grey
+        7: '#6f6f6f', // Pale White/Grey
+        8: '#6f6f6f', // Pale White/Grey
+        9: '#6f6f6f'  // Pale White/Grey
     };
-    return zoneColors[fareZone] || '#E6E6E6'; // Default to Pale White/Grey for unknown zones
+    return zoneColors[fareZone] || '#6f6f6f'; // Default to Pale White/Grey for unknown zones
 };
 
 // Parse fare zone and get the lowest numerical zone
@@ -104,7 +104,6 @@ function MapContent({ points, centroids }) {
               <div className="custom-popup">
                 <h3 className="font-bold">{centroid.StationName} (Centroid)</h3>
                 <p>Fare Zones: {centroid.FareZones}</p>
-                <p>Lowest Zone: {lowestZone}</p>
                 <p>WiFi: {centroid.Wifi ? 'Available' : 'Not Available'}</p>
               </div>
             </Popup>
