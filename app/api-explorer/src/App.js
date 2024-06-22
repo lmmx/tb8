@@ -18,8 +18,28 @@ const stationIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
+// Color mapping function based on fare zone
+const getFareZoneColor = (fareZone) => {
+    const zoneColors = {
+        1: '#FFD300', // Yellow
+        2: '#0098D4', // Light Blue
+        3: '#0007A0', // Dark Blue
+        4: '#00A575', // Green
+        5: '#F58025', // Orange
+        6: '#9B0056'  // Purple
+    };
+    return zoneColors[fareZone] || '#808080'; // Grey for zones 7+ or unknown
+};
+
+// Parse fare zone and get the lowest numerical zone
+const getLowestFareZone = (fareZones) => {
+    if (!fareZones) return 7; // Default to 7+ if no fare zone info
+    const zones = fareZones.split('|').map(zone => parseInt(zone)).filter(zone => !isNaN(zone));
+    return zones.length > 0 ? Math.min(...zones) : 7;
+};
+
 // Create a custom cross icon for centroids
-const createCrossIcon = (color = '#3388ff', size = 20) => {
+const createCrossIcon = (color, size = 20) => {
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -33,8 +53,6 @@ const createCrossIcon = (color = '#3388ff', size = 20) => {
         iconAnchor: [size/2, size/2],
     });
 };
-
-const centroidIcon = createCrossIcon('#3388ff', 24);
 
 const DEFAULT_CENTER = [51.505, -0.09];
 const DEFAULT_ZOOM = 10;
@@ -70,17 +88,26 @@ function MapContent({ points, centroids }) {
           </Popup>
         </Marker>
       ))}
-      {centroids && centroids.map((centroid) => (
-        <Marker key={`centroid-${centroid.StationUniqueId}`} position={[centroid.Lat, centroid.Lon]} icon={centroidIcon}>
-          <Popup>
-            <div className="custom-popup">
-              <h3 className="font-bold">{centroid.StationName} (Centroid)</h3>
-              <p>Fare Zones: {centroid.FareZones}</p>
-              <p>WiFi: {centroid.Wifi ? 'Available' : 'Not Available'}</p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {centroids && centroids.map((centroid) => {
+        const lowestZone = getLowestFareZone(centroid.FareZones);
+        const color = getFareZoneColor(lowestZone);
+        return (
+          <Marker 
+            key={`centroid-${centroid.StationUniqueId}`} 
+            position={[centroid.Lat, centroid.Lon]} 
+            icon={createCrossIcon(color, 24)}
+          >
+            <Popup>
+              <div className="custom-popup">
+                <h3 className="font-bold">{centroid.StationName} (Centroid)</h3>
+                <p>Fare Zones: {centroid.FareZones}</p>
+                <p>Lowest Zone: {lowestZone}</p>
+                <p>WiFi: {centroid.Wifi ? 'Available' : 'Not Available'}</p>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
       <FullscreenControl />
     </>
   );
@@ -186,12 +213,16 @@ export default function StationPointsExplorer() {
               <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="Station Marker" className="h-6 mr-2" />
               <span>Station Point</span>
             </div>
-            <div className="flex items-center mt-1">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3388ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="mr-2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              <span>Station Centroid</span>
+            <div className="flex flex-wrap items-center mt-1">
+              {[1, 2, 3, 4, 5, 6, 7].map(zone => (
+                <div key={zone} className="flex items-center mr-4 mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getFareZoneColor(zone)} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="mr-1">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>Zone {zone}{zone === 7 ? '+' : ''}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
