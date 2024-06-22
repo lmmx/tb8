@@ -1,4 +1,5 @@
 import os
+import polars as pl
 from datetime import datetime, timedelta, timezone
 
 import tubeulator as tube
@@ -20,7 +21,20 @@ lines = tube.load_lines()
 lines_by_station = tube.load_lines_by_station()
 stations = tube.load_stations()
 station_points = tube.load_station_points().join(stations, on="StationUniqueId")
-
+station_centroids = (
+    station_points.filter(
+        [
+            ~pl.col("AreaName").str.starts_with("Bus"),
+            pl.col("Level").eq(0),
+        ]
+    ).groupby("StationUniqueId").agg(
+        [
+            pl.col("Lat").mean(),
+            pl.col("Lon").mean(),
+        ]
+    )
+)
+stations = stations.join(station_centroids, on="StationUniqueId")
 
 def time_now() -> AwareDatetime:
     return datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -47,6 +61,7 @@ class Response(BaseModel):
     context: MetaData
     success: bool = True
     results: list[dict]
+
 
 class Error(BaseModel):
     context: MetaData
@@ -107,7 +122,6 @@ def read_stations(request: Request, query: str = "SELECT * FROM self;"):
         )
 
 
-
 @app.get("/station-points")
 def read_station_points(request: Request, query: str = "SELECT * FROM self;"):
     print(f"Received {query=}")
@@ -122,7 +136,6 @@ def read_station_points(request: Request, query: str = "SELECT * FROM self;"):
         return Response(
             context=MetaData(request_time=received, query=query), results=results
         )
-
 
 
 def serve():
