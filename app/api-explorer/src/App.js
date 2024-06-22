@@ -113,7 +113,7 @@ function MapContent({ points, centroids }) {
           >
             <Popup>
               <div className="custom-popup">
-                <h3 className="font-bold">{centroid.StationName} (Centroid)</h3>
+                <h3 className="font-bold">{centroid.StationName}</h3>
                 <p>Fare Zones: {centroid.FareZones}</p>
                 <p>WiFi: {centroid.Wifi ? 'Available' : 'Not Available'}</p>
               </div>
