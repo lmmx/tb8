@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import { FullscreenControl } from 'react-leaflet-fullscreen';
 import Select from 'react-select';
 import 'leaflet/dist/leaflet.css';
@@ -67,17 +67,17 @@ const createCentroidIcon = (color, size = 20) => {
 const DEFAULT_CENTER = [51.505, -0.09];
 const DEFAULT_ZOOM = 10;
 
-function MapContent({ points, centroids }) {
+function MapContent({ journey, centroids }) {
   const map = useMap();
 
   useEffect(() => {
-    if (points && points.length > 0) {
-      const bounds = L.latLngBounds(points.map(point => [point.Lat, point.Lon]));
+    if (journey && journey.stations.length > 0) {
+      const bounds = L.latLngBounds(journey.stations.map(station => [station.lat, station.lon]));
       map.fitBounds(bounds);
     } else {
       map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
     }
-  }, [points, map]);
+  }, [journey, map]);
 
   return (
     <>
@@ -85,142 +85,208 @@ function MapContent({ points, centroids }) {
         url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>'
       />
-      {points && points.map((point) => {
-        const lowestZone = getLowestFareZone(point.FareZones);
+      {journey && journey.stations.map((station) => {
+        const lowestZone = getLowestFareZone(station.fareZones);
         const color = getFareZoneColor(lowestZone);
         return (
-          <Marker key={point.UniqueId} position={[point.Lat, point.Lon]} icon={createStationIcon(color)}>
+          <Marker key={station.id} position={[station.lat, station.lon]} icon={createStationIcon(color)}>
             <Popup>
               <div className="custom-popup">
-                <h3 className="font-bold">{point.StationName}</h3>
-                <p>Area: {point.AreaName}</p>
-                <p>Level: {point.Level}</p>
-                <p>Fare Zones: {point.FareZones}</p>
-                <p>WiFi: {point.Wifi ? 'Available' : 'Not Available'}</p>
+                <h3 className="font-bold">{station.name}</h3>
+                <p>Area: {station.area}</p>
+                <p>Level: {station.level}</p>
+                <p>Fare Zones: {station.fareZones}</p>
+                <p>WiFi: {station.wifi ? 'Available' : 'Not Available'}</p>
               </div>
             </Popup>
           </Marker>
         );
       })}
       {centroids && centroids.map((centroid) => {
-        const lowestZone = getLowestFareZone(centroid.FareZones);
+        const lowestZone = getLowestFareZone(centroid.fareZones);
         const color = getFareZoneColor(lowestZone);
         return (
           <Marker 
-            key={`centroid-${centroid.StationUniqueId}`} 
-            position={[centroid.Lat, centroid.Lon]} 
+            key={`centroid-${centroid.id}`} 
+            position={[centroid.lat, centroid.lon]} 
             icon={createCentroidIcon(color)}
           >
             <Popup>
               <div className="custom-popup">
-                <h3 className="font-bold">{centroid.StationName}</h3>
-                <p>Fare Zones: {centroid.FareZones}</p>
-                <p>WiFi: {centroid.Wifi ? 'Available' : 'Not Available'}</p>
+                <h3 className="font-bold">{centroid.name}</h3>
+                <p>Fare Zones: {centroid.fareZones}</p>
+                <p>WiFi: {centroid.wifi ? 'Available' : 'Not Available'}</p>
               </div>
             </Popup>
           </Marker>
         );
       })}
+      {journey && journey.path && (
+        <Polyline 
+          positions={journey.path} 
+          color="blue" 
+          weight={3} 
+          opacity={0.7} 
+          smoothFactor={1}
+        />
+      )}
       <FullscreenControl />
     </>
   );
 }
 
-export default function StationPointsExplorer() {
+// API functions
+const fetchStations = async () => {
+  const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent('SELECT DISTINCT StationName FROM self ORDER BY StationName;')}`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = await response.json();
+  return data.results.map(station => ({ 
+    value: station.StationName, 
+    label: station.StationName 
+  }));
+};
+
+const fetchJourneyData = async (stationNames) => {
+  const names = stationNames.map(name => `'${name.replace("'", "''")}'`).join(', ');
+  const query = `SELECT * FROM self WHERE StationName IN (${names});`;
+  const response = await fetch(`${API_BASE_URL}/station-points?query=${encodeURIComponent(query)}`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = await response.json();
+  return data.results.filter(point => 
+    typeof point.Lat === 'number' && 
+    typeof point.Lon === 'number' &&
+    !isNaN(point.Lat) && 
+    !isNaN(point.Lon)
+  ).map(point => ({
+    id: point.UniqueId,
+    name: point.StationName,
+    lat: point.Lat,
+    lon: point.Lon,
+    area: point.AreaName,
+    level: point.Level,
+    fareZones: point.FareZones,
+    wifi: point.Wifi
+  }));
+};
+
+const fetchCentroids = async () => {
+  const query = 'SELECT DISTINCT ON (StationUniqueId) * FROM self;';
+  const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent(query)}`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = await response.json();
+  return data.results.filter(centroid => 
+    typeof centroid.Lat === 'number' && 
+    typeof centroid.Lon === 'number' &&
+    !isNaN(centroid.Lat) && 
+    !isNaN(centroid.Lon)
+  ).map(centroid => ({
+    id: centroid.StationUniqueId,
+    name: centroid.StationName,
+    lat: centroid.Lat,
+    lon: centroid.Lon,
+    fareZones: centroid.FareZones,
+    wifi: centroid.Wifi
+  }));
+};
+
+const calculateJourneyPath = (stations) => {
+  return stations.map(station => [station.lat, station.lon]);
+};
+
+export default function JourneyPlanner() {
   const [stationOptions, setStationOptions] = useState([]);
-  const [selectedStation, setSelectedStation] = useState(null);
-  const [points, setPoints] = useState(null);
+  const [selectedStations, setSelectedStations] = useState([]);
+  const [journey, setJourney] = useState(null);
   const [centroids, setCentroids] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchStationList();
-    fetchAllCentroids();
+    const initializeData = async () => {
+      try {
+        const [stationList, centroidData] = await Promise.all([fetchStations(), fetchCentroids()]);
+        setStationOptions(stationList);
+        setCentroids(centroidData);
+      } catch (err) {
+        setError("Failed to initialize data: " + err.message);
+      }
+    };
+    initializeData();
   }, []);
 
   useEffect(() => {
-    if (selectedStation) {
-      fetchStationPoints();
-    } else {
-      setPoints(null);
-    }
-  }, [selectedStation]);
-
-  const fetchStationList = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent('SELECT DISTINCT StationName FROM self ORDER BY StationName;')}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    const updateJourney = async () => {
+      if (selectedStations.length > 0) {
+        setLoading(true);
+        setError(null);
+        try {
+          const stationNames = selectedStations.map(station => station.value);
+          const journeyData = await fetchJourneyData(stationNames);
+          const journeyPath = calculateJourneyPath(journeyData);
+          setJourney({
+            stations: journeyData,
+            path: journeyPath
+          });
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setJourney(null);
       }
-      const data = await response.json();
-      setStationOptions(data.results.map(station => ({ 
-        value: station.StationName, 
-        label: station.StationName 
-      })));
-    } catch (err) {
-      setError("Failed to fetch station list: " + err.message);
-    }
+    };
+    updateJourney();
+  }, [selectedStations]);
+
+  const handleStationSelect = (selectedOptions) => {
+    setSelectedStations(selectedOptions || []);
   };
 
-  const fetchStationPoints = async () => {
-    setLoading(true);
-    setError(null);
-    setPoints(null);
-    try {
-      const query = `SELECT * FROM self WHERE StationName = '${selectedStation.value.replace("'", "''")}';`;
-      const response = await fetch(`${API_BASE_URL}/station-points?query=${encodeURIComponent(query)}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setPoints(data.results.filter(point => 
-        typeof point.Lat === 'number' && 
-        typeof point.Lon === 'number' &&
-        !isNaN(point.Lat) && 
-        !isNaN(point.Lon)
-      ));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  // This function represents how an API might return the journey data
+  const getJourneyData = () => {
+    if (!journey) return null;
+    return {
+      stations: journey.stations,
+      path: journey.path,
+      totalStations: journey.stations.length,
+      totalDistance: calculateTotalDistance(journey.path),
+      fareZones: calculateFareZones(journey.stations)
+    };
   };
 
-  const fetchAllCentroids = async () => {
-    try {
-      const query = 'SELECT DISTINCT ON (StationUniqueId) * FROM self;';
-      const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent(query)}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setCentroids(data.results.filter(centroid => 
-        typeof centroid.Lat === 'number' && 
-        typeof centroid.Lon === 'number' &&
-        !isNaN(centroid.Lat) && 
-        !isNaN(centroid.Lon)
-      ));
-    } catch (err) {
-      setError("Failed to fetch centroids: " + err.message);
+  // Helper function to calculate total distance (simplified)
+  const calculateTotalDistance = (path) => {
+    // This is a simplified calculation. In a real app, you'd use a more sophisticated method.
+    let total = 0;
+    for (let i = 1; i < path.length; i++) {
+      const dx = path[i][0] - path[i-1][0];
+      const dy = path[i][1] - path[i-1][1];
+      total += Math.sqrt(dx*dx + dy*dy);
     }
+    return total.toFixed(2);
   };
 
-  const handleStationSelect = (selectedOption) => {
-    setSelectedStation(selectedOption);
+  // Helper function to calculate fare zones
+  const calculateFareZones = (stations) => {
+    const zones = new Set();
+    stations.forEach(station => {
+      station.fareZones.split('|').forEach(zone => zones.add(parseInt(zone)));
+    });
+    return Array.from(zones).sort((a, b) => a - b);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 p-6">
       <div className="container mx-auto max-w-6xl bg-white rounded-lg shadow-lg p-6">
         <h1 className="text-4xl font-bold mb-6 text-center text-gray-800 border-b-2 border-gray-200 pb-4">
-          London Transport Network Explorer
+          London Transport Journey Planner
         </h1>
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-2/3">
             <div className="bg-gray-100 rounded-lg overflow-hidden shadow-md" style={{ height: '600px' }}>
               <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ height: '100%', width: '100%' }}>
-                <MapContent points={points} centroids={centroids} />
+                <MapContent journey={journey} centroids={centroids} />
               </MapContainer>
             </div>
           </div>
@@ -228,15 +294,15 @@ export default function StationPointsExplorer() {
             <div className="bg-gray-50 rounded-lg p-4 shadow-md mb-6">
               <div className="mb-4">
                 <label htmlFor="station-select" className="block mb-2 font-medium text-gray-600">
-                  Select a Station:
+                  Select Stations for Your Journey:
                 </label>
                 <Select
                   id="station-select"
                   options={stationOptions}
-                  value={selectedStation}
+                  value={selectedStations}
                   onChange={handleStationSelect}
-                  placeholder="Type to search for a station..."
-                  isClearable
+                  placeholder="Type to search for stations..."
+                  isMulti
                   className="text-gray-700"
                   styles={{
                     control: (provided) => ({
@@ -264,10 +330,12 @@ export default function StationPointsExplorer() {
                   <p>{error}</p>
                 </div>
               )}
-              {selectedStation && (
+              {journey && (
                 <div className="mt-4 bg-white p-4 rounded-lg shadow-inner">
-                  <h3 className="text-xl font-semibold mb-2 text-gray-700">Selected Station</h3>
-                  <p className="text-gray-600">{selectedStation.label}</p>
+                  <h3 className="text-xl font-semibold mb-2 text-gray-700">Journey Summary</h3>
+                  <p>Total Stations: {journey.stations.length}</p>
+                  <p>Total Distance: {calculateTotalDistance(journey.path)} units</p>
+                  <p>Fare Zones: {calculateFareZones(journey.stations).join(', ')}</p>
                 </div>
               )}
             </div>
