@@ -208,6 +208,25 @@ const calculateJourneyPath = (stations) => {
   return stations.map(station => [station.centroid.lat, station.centroid.lon]);
 };
 
+// Haversine formula to calculate distance between two points
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+  ; 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI/180)
+}
+
 export default function JourneyPlanner() {
   const [stationOptions, setStationOptions] = useState([]);
   const [selectedStations, setSelectedStations] = useState([]);
@@ -287,9 +306,9 @@ export default function JourneyPlanner() {
     // This is a simplified calculation. In a real app, you'd use a more sophisticated method.
     let total = 0;
     for (let i = 1; i < path.length; i++) {
-      const dx = path[i][0] - path[i-1][0];
-      const dy = path[i][1] - path[i-1][1];
-      total += Math.sqrt(dx*dx + dy*dy);
+      const [lat1, lon1] = path[i-1];
+      const [lat2, lon2] = path[i];
+      total += getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2);
     }
     return total.toFixed(2);
   };
@@ -370,7 +389,7 @@ export default function JourneyPlanner() {
                 <div className="mt-4 bg-white p-4 rounded-lg shadow-inner">
                   <h3 className="text-xl font-semibold mb-2 text-gray-700">Journey Summary</h3>
                   <p>Total Stations: {journey.stations.length}</p>
-                  <p>Total Distance: {calculateTotalDistance(journey.path)} units</p>
+                  <p>Total Distance: {calculateTotalDistance(journey.path)} km</p>
                   <p>Fare Zones: {calculateFareZones(journey.stations).join(', ')}</p>
                   {debugMode && (
                     <button 
