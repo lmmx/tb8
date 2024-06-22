@@ -18,22 +18,25 @@ const stationIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-// Color mapping function based on fare zone
+// Updated color mapping function based on fare zone
 const getFareZoneColor = (fareZone) => {
     const zoneColors = {
-        1: '#FFD300', // Yellow
-        2: '#0098D4', // Light Blue
-        3: '#0007A0', // Dark Blue
-        4: '#00A575', // Green
-        5: '#F58025', // Orange
-        6: '#9B0056'  // Purple
+        1: '#FFFFFF', // White
+        2: '#00A693', // Sea Green
+        3: '#FFD900', // Mellow Yellow
+        4: '#FF9900', // Mellow Orange
+        5: '#AE84DD', // Pastel Purple
+        6: '#FFC0CB', // Baby Pink
+        7: '#E6E6E6', // Pale White/Grey
+        8: '#E6E6E6', // Pale White/Grey
+        9: '#E6E6E6'  // Pale White/Grey
     };
-    return zoneColors[fareZone] || '#808080'; // Grey for zones 7+ or unknown
+    return zoneColors[fareZone] || '#E6E6E6'; // Default to Pale White/Grey for unknown zones
 };
 
 // Parse fare zone and get the lowest numerical zone
 const getLowestFareZone = (fareZones) => {
-    if (!fareZones) return 7; // Default to 7+ if no fare zone info
+    if (!fareZones) return 7; // Default to 7 if no fare zone info
     const zones = fareZones.split('|').map(zone => parseInt(zone)).filter(zone => !isNaN(zone));
     return zones.length > 0 ? Math.min(...zones) : 7;
 };
