@@ -1,9 +1,9 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import tubeulator as tube
 from fastapi import FastAPI, Request
-from pydantic import AwareDatetime, BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
 app = FastAPI()
 port = int(os.environ.get("PORT", 4000))
@@ -13,9 +13,25 @@ lines_by_station = tube.load_lines_by_station()
 stations = tube.load_stations()
 
 
+def time_now() -> AwareDatetime:
+    return datetime.utcnow().replace(tzinfo=timezone.utc)
+
+
 class MetaData(BaseModel):
-    request_time: AwareDatetime = Field(default_factory=datetime.utcnow)
+    request_time: AwareDatetime
+    response_time: AwareDatetime
+    response_duration: timedelta
     query: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def calculate_duration(cls, data: dict) -> dict:
+        breakpoint()
+        request_time = data.get("request_time")
+        if request_time:
+            data["response_time"] = time_now()
+            data["response_duration"] = data["response_time"] - request_time
+        return data
 
 
 class Response(BaseModel):
@@ -30,20 +46,26 @@ def read_root():
 
 @app.get("/lines")
 def read_lines(request: Request, query: str = "SELECT * FROM self;"):
-    meta = MetaData(query=query)
-    return Response(context=meta, results=lines.sql(query).to_dicts())
+    received = time_now()
+    results = lines.sql(query).to_dicts()
+    ctx = MetaData(request_time=received, query=query)
+    return Response(context=ctx, results=results)
 
 
 @app.get("/lines-by-station")
 def read_lines_by_station(request: Request, query: str = "SELECT * FROM self;"):
-    meta = MetaData(query=query)
-    return Response(context=meta, results=lines_by_station.sql(query).to_dicts())
+    received = time_now()
+    results = lines_by_station.sql(query).to_dicts()
+    ctx = MetaData(request_time=received, query=query)
+    return Response(context=ctx, results=results)
 
 
 @app.get("/stations")
 def read_stations(request: Request, query: str = "SELECT * FROM self;"):
-    meta = MetaData(query=query)
-    return Response(context=meta, results=stations.sql(query).to_dicts())
+    received = time_now()
+    results = stations.sql(query).to_dicts()
+    ctx = MetaData(request_time=received, query=query)
+    return Response(context=ctx, results=results)
 
 
 def serve():
