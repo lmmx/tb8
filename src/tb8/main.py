@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import tubeulator as tube
 from fastapi import FastAPI, Request
-from pydantic import AwareDatetime, BaseModel, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 app = FastAPI()
 port = int(os.environ.get("PORT", 4000))
@@ -18,19 +18,19 @@ def time_now() -> AwareDatetime:
 
 
 class MetaData(BaseModel):
+    model_config = ConfigDict(ser_json_timedelta="float")
     request_time: AwareDatetime
     response_time: AwareDatetime
-    response_duration: timedelta
+    response_latency: timedelta
     query: str
 
     @model_validator(mode="before")
     @classmethod
     def calculate_duration(cls, data: dict) -> dict:
-        breakpoint()
         request_time = data.get("request_time")
         if request_time:
             data["response_time"] = time_now()
-            data["response_duration"] = data["response_time"] - request_time
+            data["response_latency"] = data["response_time"] - request_time
         return data
 
 
