@@ -212,27 +212,9 @@ export default function StationPointsExplorer() {
                 <MapContent points={points} centroids={centroids} />
               </MapContainer>
             </div>
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg shadow-md">
-              <h3 className="font-bold text-lg mb-2 text-gray-700">Legend:</h3>
-              <div className="flex items-center mb-2">
-                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="Station Marker" className="h-6 mr-2" />
-                <span className="text-gray-600">Station Point</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                {[1, 2, 3, 4, 5, 6, 7].map(zone => (
-                  <div key={zone} className="flex items-center bg-white p-2 rounded shadow">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getFareZoneColor(zone)} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    <span className="text-sm text-gray-600">Zone {zone}{zone === 7 ? '+' : ''}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
           <div className="w-full md:w-1/3">
-            <div className="bg-gray-50 rounded-lg p-4 shadow-md">
+            <div className="bg-gray-50 rounded-lg p-4 shadow-md mb-6">
               <h2 className="text-2xl font-semibold mb-4 text-gray-700">Station Selector</h2>
               <div className="mb-4">
                 <label htmlFor="station-select" className="block mb-2 font-medium text-gray-600">
@@ -279,11 +261,29 @@ export default function StationPointsExplorer() {
                 </div>
               )}
             </div>
+            <div className="bg-gray-50 rounded-lg p-4 shadow-md">
+              <h3 className="text-xl font-semibold mb-3 text-gray-700">Legend</h3>
+              <div className="flex items-center mb-3">
+                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="Station Marker" className="h-6 mr-2" />
+                <span className="text-gray-600">Station Point</span>
+              </div>
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5, 6, 7].map(zone => (
+                  <div key={zone} className="flex items-center bg-white p-2 rounded shadow">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getFareZoneColor(zone)} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span className="text-sm text-gray-600">Zone {zone}{zone === 7 ? '+' : ''}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
       <footer className="mt-8 text-center text-gray-600">
-        <p>© 2024 London Transport Network Explorer. All rights reserved.</p>
+        <p>© 2024 Louis Maddox : : <a href="https://spin.systems">spin.systems</a></p>
       </footer>
     </div>
   );
