@@ -8,8 +8,8 @@ import L from 'leaflet';
 
 const API_BASE_URL = 'https://tb8.onrender.com';
 
-// Custom icon
-const customIcon = new L.Icon({
+// Custom icons
+const stationIcon = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [25, 41],
@@ -18,11 +18,19 @@ const customIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-// London coordinates as default center
+const centroidIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
+
 const DEFAULT_CENTER = [51.505, -0.09];
 const DEFAULT_ZOOM = 10;
 
-function MapContent({ points }) {
+function MapContent({ points, centroids }) {
   const map = useMap();
 
   useEffect(() => {
@@ -41,7 +49,7 @@ function MapContent({ points }) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>'
       />
       {points && points.map((point) => (
-        <Marker key={point.UniqueId} position={[point.Lat, point.Lon]} icon={customIcon}>
+        <Marker key={point.UniqueId} position={[point.Lat, point.Lon]} icon={stationIcon}>
           <Popup>
             <div className="custom-popup">
               <h3 className="font-bold">{point.StationName}</h3>
@@ -49,6 +57,17 @@ function MapContent({ points }) {
               <p>Level: {point.Level}</p>
               <p>Fare Zones: {point.FareZones}</p>
               <p>WiFi: {point.Wifi ? 'Available' : 'Not Available'}</p>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+      {centroids && centroids.map((centroid) => (
+        <Marker key={`centroid-${centroid.StationUniqueId}`} position={[centroid.Lat, centroid.Lon]} icon={centroidIcon}>
+          <Popup>
+            <div className="custom-popup">
+              <h3 className="font-bold">{centroid.StationName} (Centroid)</h3>
+              <p>Fare Zones: {centroid.FareZones}</p>
+              <p>WiFi: {centroid.Wifi ? 'Available' : 'Not Available'}</p>
             </div>
           </Popup>
         </Marker>
@@ -62,11 +81,13 @@ export default function StationPointsExplorer() {
   const [stationOptions, setStationOptions] = useState([]);
   const [selectedStation, setSelectedStation] = useState(null);
   const [points, setPoints] = useState(null);
+  const [centroids, setCentroids] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchStationList();
+    fetchAllCentroids();
   }, []);
 
   useEffect(() => {
@@ -117,6 +138,25 @@ export default function StationPointsExplorer() {
     }
   };
 
+  const fetchAllCentroids = async () => {
+    try {
+      const query = 'SELECT DISTINCT ON (StationUniqueId) * FROM self;';
+      const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setCentroids(data.results.filter(centroid => 
+        typeof centroid.Lat === 'number' && 
+        typeof centroid.Lon === 'number' &&
+        !isNaN(centroid.Lat) && 
+        !isNaN(centroid.Lon)
+      ));
+    } catch (err) {
+      setError("Failed to fetch centroids: " + err.message);
+    }
+  };
+
   const handleStationSelect = (selectedOption) => {
     setSelectedStation(selectedOption);
   };
@@ -128,7 +168,7 @@ export default function StationPointsExplorer() {
         <div className="w-full md:w-2/3">
           <div style={{ height: '600px', width: '100%' }}>
             <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ height: '100%', width: '100%' }}>
-              <MapContent points={points} />
+              <MapContent points={points} centroids={centroids} />
             </MapContainer>
           </div>
           <div className="mt-2 p-2 bg-gray-100 rounded">
@@ -136,6 +176,10 @@ export default function StationPointsExplorer() {
             <div className="flex items-center">
               <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="Station Marker" className="h-6 mr-2" />
               <span>Station Point</span>
+            </div>
+            <div className="flex items-center mt-1">
+              <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" alt="Centroid Marker" className="h-6 mr-2" />
+              <span>Station Centroid</span>
             </div>
           </div>
         </div>
