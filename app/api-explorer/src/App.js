@@ -28,6 +28,8 @@ export default function StationPointsExplorer() {
   useEffect(() => {
     if (selectedStation) {
       fetchStationPoints();
+    } else {
+      setResults(null);
     }
   }, [selectedStation]);
 
@@ -90,7 +92,7 @@ export default function StationPointsExplorer() {
     const center = [validPoints[0].Lat, validPoints[0].Lon];
 
     return (
-      <div className="mb-4">
+      <div className="mt-4">
         <h2 className="text-2xl font-bold mb-2">Map:</h2>
         <MapContainer center={center} zoom={15} style={{ height: '400px', width: '100%' }}>
           <TileLayer
@@ -116,7 +118,7 @@ export default function StationPointsExplorer() {
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <h1 className="text-3xl font-bold mb-4">Station Points Explorer</h1>
-      <div className="mb-4">
+      <div className="mb-4 relative z-10">
         <label htmlFor="station-select" className="block mb-2 font-semibold">
           Select a Station:
         </label>
@@ -127,6 +129,17 @@ export default function StationPointsExplorer() {
           onChange={handleStationSelect}
           placeholder="Type to search for a station..."
           isClearable
+          className="z-20"
+          styles={{
+            control: (provided) => ({
+              ...provided,
+              zIndex: 20
+            }),
+            menu: (provided) => ({
+              ...provided,
+              zIndex: 20
+            })
+          }}
         />
       </div>
       {loading && <p>Loading...</p>}
