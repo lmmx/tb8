@@ -26,7 +26,7 @@ const getFareZoneColor = (fareZone) => {
         3: '#FFD900', // Mellow Yellow
         4: '#FF9900', // Mellow Orange
         5: '#AE84DD', // Pastel Purple
-        6: '#FFC0CB', // Baby Pink
+        6: '#EC7D91', // Baby Pink
         7: '#6f6f6f', // Pale White/Grey
         8: '#6f6f6f', // Pale White/Grey
         9: '#6f6f6f'  // Pale White/Grey
