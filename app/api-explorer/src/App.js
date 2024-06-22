@@ -201,7 +201,7 @@ export default function StationPointsExplorer() {
 
   return (
     <div className="container mx-auto p-4 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-4">Station Points Explorer</h1>
+      <h1 className="text-3xl font-bold mb-4">London Transport Network Station Points Explorer</h1>
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-2/3">
           <div style={{ height: '600px', width: '100%' }}>
