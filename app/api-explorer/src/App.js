@@ -5,6 +5,7 @@ import Select from 'react-select';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
 import L from 'leaflet';
+import { Bug } from 'lucide-react';
 
 const API_BASE_URL = 'https://tb8.onrender.com';
 
@@ -214,6 +215,7 @@ export default function JourneyPlanner() {
   const [allCentroids, setAllCentroids] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -306,6 +308,10 @@ export default function JourneyPlanner() {
     console.log('Current Journey Data:', getJourneyData());
   };
 
+  const toggleDebugMode = () => {
+    setDebugMode(!debugMode);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 p-6">
       <div className="container mx-auto max-w-6xl bg-white rounded-lg shadow-lg p-6">
@@ -366,12 +372,14 @@ export default function JourneyPlanner() {
                   <p>Total Stations: {journey.stations.length}</p>
                   <p>Total Distance: {calculateTotalDistance(journey.path)} units</p>
                   <p>Fare Zones: {calculateFareZones(journey.stations).join(', ')}</p>
-                  <button 
-                    onClick={logJourneyData}
-                    className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                  >
-                    Log Journey Data to Console
-                  </button>
+                  {debugMode && (
+                    <button 
+                      onClick={logJourneyData}
+                      className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                    >
+                      Log Journey Data to Console
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -409,8 +417,15 @@ export default function JourneyPlanner() {
           </div>
         </div>
       </div>
-      <footer className="mt-8 text-center text-gray-600">
+      <footer className="mt-8 text-center text-gray-600 relative">
         <p>© 2024 Louis Maddox : : <a href="https://spin.systems">spin.systems</a></p>
+        <button 
+          onClick={toggleDebugMode}
+          className="absolute bottom-0 right-0 p-2 text-gray-500 hover:text-gray-700"
+          aria-label="Toggle Debug Mode"
+        >
+          <Bug size={24} />
+        </button>
       </footer>
     </div>
   );
