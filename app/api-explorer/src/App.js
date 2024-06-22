@@ -70,6 +70,14 @@ export default function StationPointsExplorer() {
     }
   }, [selectedStation]);
 
+  useEffect(() => {
+    // Apply the z-index fix to the leaflet container
+    const leafletContainer = document.querySelector('.leaflet-container');
+    if (leafletContainer) {
+      leafletContainer.style.zIndex = '-1';
+    }
+  }, []);
+
   const fetchStationList = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent('SELECT DISTINCT StationName FROM self ORDER BY StationName;')}`);
