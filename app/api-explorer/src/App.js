@@ -200,62 +200,91 @@ export default function StationPointsExplorer() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-4">London Transport Network Station Points Explorer</h1>
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-2/3">
-          <div style={{ height: '600px', width: '100%' }}>
-            <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ height: '100%', width: '100%' }}>
-              <MapContent points={points} centroids={centroids} />
-            </MapContainer>
-          </div>
-          <div className="mt-2 p-2 bg-gray-100 rounded">
-            <h3 className="font-bold">Legend:</h3>
-            <div className="flex items-center">
-              <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="Station Marker" className="h-6 mr-2" />
-              <span>Station Point</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 p-6">
+      <div className="container mx-auto max-w-6xl bg-white rounded-lg shadow-lg p-6">
+        <h1 className="text-4xl font-bold mb-6 text-center text-gray-800 border-b-2 border-gray-200 pb-4">
+          London Transport Network Explorer
+        </h1>
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="w-full md:w-2/3">
+            <div className="bg-gray-100 rounded-lg overflow-hidden shadow-md" style={{ height: '600px' }}>
+              <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ height: '100%', width: '100%' }}>
+                <MapContent points={points} centroids={centroids} />
+              </MapContainer>
             </div>
-            <div className="flex flex-wrap items-center mt-1">
-              {[1, 2, 3, 4, 5, 6, 7].map(zone => (
-                <div key={zone} className="flex items-center mr-4 mb-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getFareZoneColor(zone)} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="mr-1">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  <span>Zone {zone}{zone === 7 ? '+' : ''}</span>
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg shadow-md">
+              <h3 className="font-bold text-lg mb-2 text-gray-700">Legend:</h3>
+              <div className="flex items-center mb-2">
+                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="Station Marker" className="h-6 mr-2" />
+                <span className="text-gray-600">Station Point</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {[1, 2, 3, 4, 5, 6, 7].map(zone => (
+                  <div key={zone} className="flex items-center bg-white p-2 rounded shadow">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getFareZoneColor(zone)} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span className="text-sm text-gray-600">Zone {zone}{zone === 7 ? '+' : ''}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="w-full md:w-1/3">
+            <div className="bg-gray-50 rounded-lg p-4 shadow-md">
+              <h2 className="text-2xl font-semibold mb-4 text-gray-700">Station Selector</h2>
+              <div className="mb-4">
+                <label htmlFor="station-select" className="block mb-2 font-medium text-gray-600">
+                  Select a Station:
+                </label>
+                <Select
+                  id="station-select"
+                  options={stationOptions}
+                  value={selectedStation}
+                  onChange={handleStationSelect}
+                  placeholder="Type to search for a station..."
+                  isClearable
+                  className="text-gray-700"
+                  styles={{
+                    control: (provided) => ({
+                      ...provided,
+                      borderColor: '#e2e8f0',
+                      '&:hover': { borderColor: '#cbd5e0' }
+                    }),
+                    option: (provided, state) => ({
+                      ...provided,
+                      backgroundColor: state.isSelected ? '#4299e1' : state.isFocused ? '#ebf8ff' : null,
+                      color: state.isSelected ? 'white' : '#4a5568'
+                    })
+                  }}
+                />
+              </div>
+              {loading && (
+                <div className="flex items-center justify-center p-4 bg-blue-100 rounded">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <span className="ml-2 text-blue-600">Loading...</span>
                 </div>
-              ))}
+              )}
+              {error && (
+                <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded mb-4" role="alert">
+                  <p className="font-bold">Error</p>
+                  <p>{error}</p>
+                </div>
+              )}
+              {selectedStation && (
+                <div className="mt-4 bg-white p-4 rounded-lg shadow-inner">
+                  <h3 className="text-xl font-semibold mb-2 text-gray-700">Selected Station</h3>
+                  <p className="text-gray-600">{selectedStation.label}</p>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-        <div className="w-full md:w-1/3">
-          <div className="mb-4">
-            <label htmlFor="station-select" className="block mb-2 font-semibold">
-              Select a Station:
-            </label>
-            <Select
-              id="station-select"
-              options={stationOptions}
-              value={selectedStation}
-              onChange={handleStationSelect}
-              placeholder="Type to search for a station..."
-              isClearable
-            />
-          </div>
-          {loading && <p>Loading...</p>}
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
-          {selectedStation && (
-            <div className="mt-4">
-              <h2 className="text-xl font-bold mb-2">Selected Station:</h2>
-              <p>{selectedStation.label}</p>
-            </div>
-          )}
         </div>
       </div>
+      <footer className="mt-8 text-center text-gray-600">
+        <p>© 2024 London Transport Network Explorer. All rights reserved.</p>
+      </footer>
     </div>
   );
 }
