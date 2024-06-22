@@ -70,14 +70,6 @@ export default function StationPointsExplorer() {
     }
   }, [selectedStation]);
 
-  useEffect(() => {
-    // Apply the z-index fix to the leaflet container
-    const leafletContainer = document.querySelector('.leaflet-container');
-    if (leafletContainer) {
-      leafletContainer.style.zIndex = '-1';
-    }
-  }, []);
-
   const fetchStationList = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent('SELECT DISTINCT StationName FROM self ORDER BY StationName;')}`);
@@ -123,32 +115,43 @@ export default function StationPointsExplorer() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
+    <div className="container mx-auto p-4 max-w-6xl">
       <h1 className="text-3xl font-bold mb-4">Station Points Explorer</h1>
-      <div className="mb-4">
-        <label htmlFor="station-select" className="block mb-2 font-semibold">
-          Select a Station:
-        </label>
-        <Select
-          id="station-select"
-          options={stationOptions}
-          value={selectedStation}
-          onChange={handleStationSelect}
-          placeholder="Type to search for a station..."
-          isClearable
-        />
-      </div>
-      {loading && <p>Loading...</p>}
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="w-full md:w-2/3">
+          <div style={{ height: '600px', width: '100%' }}>
+            <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ height: '100%', width: '100%' }}>
+              <MapContent points={points} />
+            </MapContainer>
+          </div>
         </div>
-      )}
-      <div className="mt-4">
-        <h2 className="text-2xl font-bold mb-2">Map:</h2>
-        <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ height: '400px', width: '100%' }}>
-          <MapContent points={points} />
-        </MapContainer>
+        <div className="w-full md:w-1/3">
+          <div className="mb-4">
+            <label htmlFor="station-select" className="block mb-2 font-semibold">
+              Select a Station:
+            </label>
+            <Select
+              id="station-select"
+              options={stationOptions}
+              value={selectedStation}
+              onChange={handleStationSelect}
+              placeholder="Type to search for a station..."
+              isClearable
+            />
+          </div>
+          {loading && <p>Loading...</p>}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
+          {selectedStation && (
+            <div className="mt-4">
+              <h2 className="text-xl font-bold mb-2">Selected Station:</h2>
+              <p>{selectedStation.label}</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
