@@ -273,20 +273,22 @@ export default function StationPointsExplorer() {
             </div>
             <div className="bg-gray-50 rounded-lg p-4 shadow-md">
               <h3 className="text-xl font-semibold mb-3 text-gray-700">Legend</h3>
-              <div className="flex items-center mb-3">
-                <svg width="24" height="24" viewBox="0 0 24 24" className="mr-2">
-                  <circle cx="12" cy="12" r="10" fill="black" />
-                  <circle cx="12" cy="12" r="8" fill="white" />
-                </svg>
-                <span className="text-gray-600">Station Point</span>
-              </div>
-              <div className="flex items-center mb-3">
-                <svg width="24" height="24" viewBox="0 0 24 24" className="mr-2">
-                  <circle cx="12" cy="12" r="10" fill="black" />
-                  <circle cx="12" cy="12" r="8" fill="white" />
-                  <circle cx="12" cy="12" r="3" fill="black" />
-                </svg>
-                <span className="text-gray-600">Station Centroid</span>
+              <div className="flex mb-3">
+                <div className="flex items-center w-1/2">
+                  <svg width="24" height="24" viewBox="0 0 24 24" className="mr-2">
+                    <circle cx="12" cy="12" r="10" fill="black" />
+                    <circle cx="12" cy="12" r="8" fill="white" />
+                  </svg>
+                  <span className="text-sm text-gray-600">Station Point</span>
+                </div>
+                <div className="flex items-center w-1/2">
+                  <svg width="24" height="24" viewBox="0 0 24 24" className="mr-2">
+                    <circle cx="12" cy="12" r="10" fill="black" />
+                    <circle cx="12" cy="12" r="8" fill="white" />
+                    <circle cx="12" cy="12" r="3" fill="black" />
+                  </svg>
+                  <span className="text-sm text-gray-600">Station Centroid</span>
+                </div>
               </div>
               <div className="space-y-2">
                 {[1, 2, 3, 4, 5, 6, 7].map(zone => (
