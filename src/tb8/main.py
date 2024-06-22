@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import tubeulator as tube
 from fastapi import FastAPI, Request
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, model_validator
 
 app = FastAPI()
 port = int(os.environ.get("PORT", 4000))
@@ -11,6 +11,7 @@ port = int(os.environ.get("PORT", 4000))
 lines = tube.load_lines()
 lines_by_station = tube.load_lines_by_station()
 stations = tube.load_stations()
+station_points = tube.load_station_points()
 
 
 def time_now() -> AwareDatetime:
@@ -48,24 +49,28 @@ def read_root():
 def read_lines(request: Request, query: str = "SELECT * FROM self;"):
     received = time_now()
     results = lines.sql(query).to_dicts()
-    ctx = MetaData(request_time=received, query=query)
-    return Response(context=ctx, results=results)
+    return Response(context=MetaData(request_time=received, query=query), results=results)
 
 
 @app.get("/lines-by-station")
 def read_lines_by_station(request: Request, query: str = "SELECT * FROM self;"):
     received = time_now()
     results = lines_by_station.sql(query).to_dicts()
-    ctx = MetaData(request_time=received, query=query)
-    return Response(context=ctx, results=results)
+    return Response(context=MetaData(request_time=received, query=query), results=results)
 
 
 @app.get("/stations")
 def read_stations(request: Request, query: str = "SELECT * FROM self;"):
     received = time_now()
     results = stations.sql(query).to_dicts()
-    ctx = MetaData(request_time=received, query=query)
-    return Response(context=ctx, results=results)
+    return Response(context=MetaData(request_time=received, query=query), results=results)
+
+
+@app.get("/station-points")
+def read_station_points(request: Request, query: str = "SELECT * FROM self;"):
+    received = time_now()
+    results = station_points.sql(query).to_dicts()
+    return Response(context=MetaData(request_time=received, query=query), results=results)
 
 
 def serve():
