@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
 const API_BASE_URL = 'https://tb8.onrender.com';
 
@@ -9,8 +12,16 @@ const endpoints = [
   { value: '/station-points', label: 'Station Points' },
 ];
 
+// Fix for default marker icon
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
+});
+
 export default function ApiExplorer() {
-  const [selectedEndpoint, setSelectedEndpoint] = useState(endpoints[0].value);
+  const [selectedEndpoint, setSelectedEndpoint] = useState('/station-points');
   const [query, setQuery] = useState('SELECT * FROM self;');
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
@@ -20,6 +31,7 @@ export default function ApiExplorer() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setResults(null);
     try {
       const response = await fetch(`${API_BASE_URL}${selectedEndpoint}?query=${encodeURIComponent(query)}`);
       if (!response.ok) {
@@ -32,6 +44,59 @@ export default function ApiExplorer() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderMap = () => {
+    if (selectedEndpoint !== '/station-points' || !results || !results.results || results.results.length === 0) {
+      return null;
+    }
+
+    const validPoints = results.results.filter(point => 
+      typeof point.Lat === 'number' && 
+      typeof point.Lon === 'number' &&
+      !isNaN(point.Lat) && 
+      !isNaN(point.Lon)
+    );
+
+    if (validPoints.length === 0) {
+      return <p>No valid coordinates found in the data.</p>;
+    }
+
+    const center = [validPoints[0].Lat, validPoints[0].Lon];
+
+    return (
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold mb-2">Map:</h2>
+        <MapContainer center={center} zoom={11} style={{ height: '400px', width: '100%' }}>
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
+          {validPoints.map((point) => (
+            <Marker key={point.UniqueId} position={[point.Lat, point.Lon]}>
+              <Popup>
+                <strong>{point.FriendlyName}</strong><br />
+                Area: {point.AreaName}<br />
+                Level: {point.Level}
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
+    );
+  };
+
+  const renderResults = () => {
+    if (!results) return null;
+
+    return (
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Results:</h2>
+        <pre className="bg-gray-100 p-4 rounded overflow-x-auto">
+          {JSON.stringify(results, null, 2)}
+        </pre>
+      </div>
+    );
   };
 
   return (
@@ -80,14 +145,8 @@ export default function ApiExplorer() {
           {error}
         </div>
       )}
-      {results && (
-        <div>
-          <h2 className="text-2xl font-bold mb-2">Results:</h2>
-          <pre className="bg-gray-100 p-4 rounded overflow-x-auto">
-            {JSON.stringify(results, null, 2)}
-          </pre>
-        </div>
-      )}
+      {renderMap()}
+      {renderResults()}
     </div>
   );
 }
