@@ -204,10 +204,6 @@ const fetchCentroids = async () => {
   }, {});
 };
 
-const calculateJourneyPath = (stations) => {
-  return stations.map(station => [station.centroid.lat, station.centroid.lon]);
-};
-
 // Haversine formula to calculate distance between two points
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const R = 6371; // Radius of the earth in km
@@ -261,9 +257,13 @@ export default function JourneyPlanner() {
             ...station,
             centroid: allCentroids[station.name]
           }));
-          const journeyPath = calculateJourneyPath(journeyStations);
+          // Ensure the stations are in the same order as they were selected
+          const orderedJourneyStations = stationNames.map(name => 
+            journeyStations.find(station => station.name === name)
+          );
+          const journeyPath = calculateJourneyPath(orderedJourneyStations);
           const newJourney = {
-            stations: journeyStations,
+            stations: orderedJourneyStations,
             path: journeyPath
           };
           setJourney(newJourney);
@@ -279,6 +279,10 @@ export default function JourneyPlanner() {
     };
     updateJourney();
   }, [selectedStations, allCentroids]);
+
+  const calculateJourneyPath = (stations) => {
+    return stations.map(station => [station.centroid.lat, station.centroid.lon]);
+  };
 
   const handleStationSelect = (selectedOptions) => {
     setSelectedStations(selectedOptions || []);
