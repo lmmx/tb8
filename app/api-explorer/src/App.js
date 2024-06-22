@@ -67,14 +67,12 @@ const createCentroidIcon = (color, size = 20) => {
 const DEFAULT_CENTER = [51.505, -0.09];
 const DEFAULT_ZOOM = 10;
 
-function MapContent({ journey, centroids }) {
+function MapContent({ journey, allCentroids }) {
   const map = useMap();
 
   useEffect(() => {
     if (journey && journey.stations.length > 0) {
-      const bounds = L.latLngBounds(journey.stations.flatMap(station => 
-        station.points.map(point => [point.lat, point.lon])
-      ));
+      const bounds = L.latLngBounds(journey.stations.map(station => [station.centroid.lat, station.centroid.lon]));
       map.fitBounds(bounds);
     } else {
       map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
@@ -106,20 +104,20 @@ function MapContent({ journey, centroids }) {
           );
         })
       )}
-      {centroids && centroids.map((centroid) => {
-        const lowestZone = getLowestFareZone(centroid.fareZones);
+      {journey && journey.stations.map(station => {
+        const lowestZone = getLowestFareZone(station.centroid.fareZones);
         const color = getFareZoneColor(lowestZone);
         return (
           <Marker 
-            key={`centroid-${centroid.id}`} 
-            position={[centroid.lat, centroid.lon]} 
+            key={`centroid-${station.centroid.id}`} 
+            position={[station.centroid.lat, station.centroid.lon]} 
             icon={createCentroidIcon(color)}
           >
             <Popup>
               <div className="custom-popup">
-                <h3 className="font-bold">{centroid.name}</h3>
-                <p>Fare Zones: {centroid.fareZones}</p>
-                <p>WiFi: {centroid.wifi ? 'Available' : 'Not Available'}</p>
+                <h3 className="font-bold">{station.name}</h3>
+                <p>Fare Zones: {station.centroid.fareZones}</p>
+                <p>WiFi: {station.centroid.wifi ? 'Available' : 'Not Available'}</p>
               </div>
             </Popup>
           </Marker>
@@ -192,27 +190,28 @@ const fetchCentroids = async () => {
     typeof centroid.Lon === 'number' &&
     !isNaN(centroid.Lat) && 
     !isNaN(centroid.Lon)
-  ).map(centroid => ({
-    id: centroid.StationUniqueId,
-    name: centroid.StationName,
-    lat: centroid.Lat,
-    lon: centroid.Lon,
-    fareZones: centroid.FareZones,
-    wifi: centroid.Wifi
-  }));
+  ).reduce((acc, centroid) => {
+    acc[centroid.StationName] = {
+      id: centroid.StationUniqueId,
+      name: centroid.StationName,
+      lat: centroid.Lat,
+      lon: centroid.Lon,
+      fareZones: centroid.FareZones,
+      wifi: centroid.Wifi
+    };
+    return acc;
+  }, {});
 };
 
 const calculateJourneyPath = (stations) => {
-  return stations.flatMap(station => 
-    station.points.map(point => [point.lat, point.lon])
-  );
+  return stations.map(station => [station.centroid.lat, station.centroid.lon]);
 };
 
 export default function JourneyPlanner() {
   const [stationOptions, setStationOptions] = useState([]);
   const [selectedStations, setSelectedStations] = useState([]);
   const [journey, setJourney] = useState(null);
-  const [centroids, setCentroids] = useState(null);
+  const [allCentroids, setAllCentroids] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -221,7 +220,7 @@ export default function JourneyPlanner() {
       try {
         const [stationList, centroidData] = await Promise.all([fetchStations(), fetchCentroids()]);
         setStationOptions(stationList);
-        setCentroids(centroidData);
+        setAllCentroids(centroidData);
       } catch (err) {
         setError("Failed to initialize data: " + err.message);
       }
@@ -231,15 +230,19 @@ export default function JourneyPlanner() {
 
   useEffect(() => {
     const updateJourney = async () => {
-      if (selectedStations.length > 0) {
+      if (selectedStations.length > 0 && allCentroids) {
         setLoading(true);
         setError(null);
         try {
           const stationNames = selectedStations.map(station => station.value);
           const journeyData = await fetchJourneyData(stationNames);
-          const journeyPath = calculateJourneyPath(journeyData);
+          const journeyStations = journeyData.map(station => ({
+            ...station,
+            centroid: allCentroids[station.name]
+          }));
+          const journeyPath = calculateJourneyPath(journeyStations);
           const newJourney = {
-            stations: journeyData,
+            stations: journeyStations,
             path: journeyPath
           };
           setJourney(newJourney);
@@ -254,7 +257,7 @@ export default function JourneyPlanner() {
       }
     };
     updateJourney();
-  }, [selectedStations]);
+  }, [selectedStations, allCentroids]);
 
   const handleStationSelect = (selectedOptions) => {
     setSelectedStations(selectedOptions || []);
@@ -264,7 +267,11 @@ export default function JourneyPlanner() {
   const getJourneyData = () => {
     if (!journey) return null;
     return {
-      stations: journey.stations,
+      stations: journey.stations.map(station => ({
+        name: station.name,
+        centroid: station.centroid,
+        pointCount: station.points.length
+      })),
       path: journey.path,
       totalStations: journey.stations.length,
       totalPoints: journey.stations.reduce((sum, station) => sum + station.points.length, 0),
@@ -289,9 +296,7 @@ export default function JourneyPlanner() {
   const calculateFareZones = (stations) => {
     const zones = new Set();
     stations.forEach(station => {
-      station.points.forEach(point => {
-        point.fareZones.split('|').forEach(zone => zones.add(parseInt(zone)));
-      });
+      station.centroid.fareZones.split('|').forEach(zone => zones.add(parseInt(zone)));
     });
     return Array.from(zones).sort((a, b) => a - b);
   };
@@ -311,7 +316,7 @@ export default function JourneyPlanner() {
           <div className="w-full md:w-2/3">
             <div className="bg-gray-100 rounded-lg overflow-hidden shadow-md" style={{ height: '600px' }}>
               <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ height: '100%', width: '100%' }}>
-                <MapContent journey={journey} centroids={centroids} />
+                <MapContent journey={journey} allCentroids={allCentroids} />
               </MapContainer>
             </div>
           </div>
