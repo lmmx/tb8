@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { FullscreenControl } from 'react-leaflet-fullscreen';
 import Select from 'react-select';
 import 'leaflet/dist/leaflet.css';
+import 'react-leaflet-fullscreen/styles.css';
 import L from 'leaflet';
 
 const API_BASE_URL = 'https://tb8.onrender.com';
 
-// Fix for default marker icon
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
+// Custom icon
+const customIcon = new L.Icon({
+    iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
 });
 
 // London coordinates as default center
@@ -33,20 +37,23 @@ function MapContent({ points }) {
   return (
     <>
       <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       />
       {points && points.map((point) => (
-        <Marker key={point.UniqueId} position={[point.Lat, point.Lon]}>
+        <Marker key={point.UniqueId} position={[point.Lat, point.Lon]} icon={customIcon}>
           <Popup>
-            <strong>{point.StationName}</strong><br />
-            Area: {point.AreaName}<br />
-            Level: {point.Level}<br />
-            Fare Zones: {point.FareZones}<br />
-            WiFi: {point.Wifi ? 'Available' : 'Not Available'}
+            <div className="custom-popup">
+              <h3 className="font-bold">{point.StationName}</h3>
+              <p>Area: {point.AreaName}</p>
+              <p>Level: {point.Level}</p>
+              <p>Fare Zones: {point.FareZones}</p>
+              <p>WiFi: {point.Wifi ? 'Available' : 'Not Available'}</p>
+            </div>
           </Popup>
         </Marker>
       ))}
+      <FullscreenControl />
     </>
   );
 }
@@ -123,6 +130,13 @@ export default function StationPointsExplorer() {
             <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ height: '100%', width: '100%' }}>
               <MapContent points={points} />
             </MapContainer>
+          </div>
+          <div className="mt-2 p-2 bg-gray-100 rounded">
+            <h3 className="font-bold">Legend:</h3>
+            <div className="flex items-center">
+              <img src="https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" alt="Station Marker" className="h-6 mr-2" />
+              <span>Station Point</span>
+            </div>
           </div>
         </div>
         <div className="w-full md:w-1/3">
