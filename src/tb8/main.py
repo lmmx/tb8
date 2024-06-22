@@ -45,10 +45,12 @@ class MetaData(BaseModel):
 
 class Response(BaseModel):
     context: MetaData
+    success: bool = True
     results: list[dict]
 
 class Error(BaseModel):
     context: MetaData
+    success: bool = False
     error: str
 
 
