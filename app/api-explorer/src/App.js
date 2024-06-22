@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import Select from 'react-select';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import lunr from 'lunr';
 
 const API_BASE_URL = 'https://tb8.onrender.com';
 
@@ -15,9 +15,8 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function StationPointsExplorer() {
-  const [stationList, setStationList] = useState([]);
-  const [selectedStation, setSelectedStation] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [stationOptions, setStationOptions] = useState([]);
+  const [selectedStation, setSelectedStation] = useState(null);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -39,7 +38,10 @@ export default function StationPointsExplorer() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setStationList(data.results.map(station => station.StationName));
+      setStationOptions(data.results.map(station => ({ 
+        value: station.StationName, 
+        label: station.StationName 
+      })));
     } catch (err) {
       setError("Failed to fetch station list: " + err.message);
     }
@@ -50,7 +52,7 @@ export default function StationPointsExplorer() {
     setError(null);
     setResults(null);
     try {
-      const query = `SELECT * FROM self WHERE StationName = '${selectedStation}';`;
+      const query = `SELECT * FROM self WHERE StationName = '${selectedStation.value}';`;
       const response = await fetch(`${API_BASE_URL}/station-points?query=${encodeURIComponent(query)}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -64,25 +66,8 @@ export default function StationPointsExplorer() {
     }
   };
 
-  const idx = useMemo(() => {
-    return lunr(function () {
-      this.ref('name');
-      this.field('name');
-
-      stationList.forEach(function (station) {
-        this.add({ name: station });
-      }, this);
-    });
-  }, [stationList]);
-
-  const searchResults = useMemo(() => {
-    if (searchTerm.trim() === '') return stationList;
-    return idx.search(searchTerm + '*').map(result => result.ref);
-  }, [searchTerm, idx, stationList]);
-
-  const handleStationSelect = (station) => {
-    setSelectedStation(station);
-    setSearchTerm('');
+  const handleStationSelect = (selectedOption) => {
+    setSelectedStation(selectedOption);
   };
 
   const renderMap = () => {
@@ -131,28 +116,17 @@ export default function StationPointsExplorer() {
     <div className="container mx-auto p-4 max-w-4xl">
       <h1 className="text-3xl font-bold mb-4">Station Points Explorer</h1>
       <div className="mb-4">
-        <label htmlFor="station-search" className="block mb-2 font-semibold">
-          Search for a Station:
+        <label htmlFor="station-select" className="block mb-2 font-semibold">
+          Select a Station:
         </label>
-        <input
-          id="station-search"
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 border rounded mb-2"
+        <Select
+          id="station-select"
+          options={stationOptions}
+          value={selectedStation}
+          onChange={handleStationSelect}
           placeholder="Type to search for a station..."
+          isClearable
         />
-        <ul className="max-h-60 overflow-y-auto border rounded">
-          {searchResults.map((station) => (
-            <li 
-              key={station} 
-              className="p-2 hover:bg-gray-100 cursor-pointer"
-              onClick={() => handleStationSelect(station)}
-            >
-              {station}
-            </li>
-          ))}
-        </ul>
       </div>
       {loading && <p>Loading...</p>}
       {error && (
