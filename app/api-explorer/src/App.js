@@ -278,7 +278,6 @@ export default function JourneyPlanner() {
         setError('Failed to fetch tube disruptions. Please try again later.');
       }
     };
-    fetchTubeDisruptions();
 
     const fetchPlatformData = async () => {
       try {
@@ -304,10 +303,6 @@ export default function JourneyPlanner() {
       }
     };
 
-    fetchPlatformData();
-  }, []);
-
-  useEffect(() => {
     const initializeData = async () => {
       try {
         const [stationList, centroidData] = await Promise.all([fetchStations(), fetchCentroids()]);
@@ -317,7 +312,10 @@ export default function JourneyPlanner() {
         setError("Failed to initialize data: " + err.message);
       }
     };
+
     initializeData();
+    fetchPlatformData();
+    fetchTubeDisruptions();
   }, []);
 
   useEffect(() => {
