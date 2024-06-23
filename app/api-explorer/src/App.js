@@ -239,7 +239,11 @@ export default function JourneyPlanner() {
         const response = await fetch(`${API_BASE_URL}/disruption-by-modes?query=tube`);
         if (!response.ok) throw new Error('Failed to fetch tube disruptions');
         const data = await response.json();
-        setTubeDisruptions(data);
+        if (data.success && data.results) {
+          setTubeDisruptions(data.results);
+        } else {
+          throw new Error('Invalid disruption data format');
+        }
       } catch (err) {
         console.error('Error fetching tube disruptions:', err);
         setError('Failed to fetch tube disruptions. Please try again later.');
@@ -422,19 +426,22 @@ export default function JourneyPlanner() {
                 </div>
               )}
             </div>
-            {tubeDisruptions.length > 0 && (
-              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded">
-                <div className="flex items-center mb-2">
-                  <AlertTriangle className="mr-2" />
-                  <h3 className="font-bold">Tube Disruptions</h3>
-                </div>
-                <ul className="list-disc pl-5">
-                  {tubeDisruptions.map((disruption, index) => (
-                    <li key={index}>{disruption.description}</li>
-                  ))}
-                </ul>
+          {tubeDisruptions.length > 0 && (
+            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded">
+              <div className="flex items-center mb-2">
+                <AlertTriangle className="mr-2" />
+                <h3 className="font-bold">Tube Disruptions</h3>
               </div>
-            )}
+              <ul className="list-disc pl-5">
+                {tubeDisruptions.map((disruption, index) => (
+                  <li key={index} className="mb-2">
+                    <strong>{disruption.Type}: </strong>
+                    {disruption.Description}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
             <div className="bg-gray-50 rounded-lg p-4 shadow-md">
               <h3 className="text-xl font-semibold mb-3 text-gray-700">Legend</h3>
               <div className="flex mb-3">
