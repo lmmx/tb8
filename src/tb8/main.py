@@ -199,6 +199,7 @@ def read_route_by_modes(request: Request, query: str = "tube"):
             context=MetaData(request_time=received, query=query), results=results
         )
 
+
 @app.get("/arrivals-by-lines")
 def read_arrivals_by_lines(request: Request, query: str = ",".join(arrivable_line_names)):
     print(f"Received {query=}")
@@ -217,6 +218,27 @@ def read_arrivals_by_lines(request: Request, query: str = ",".join(arrivable_lin
         return Response(
             context=MetaData(request_time=received, query=query), results=results
         )
+
+
+@app.get("/arrivals-by-station")
+def read_arrivals_by_station(request: Request, query: str, lines: str = ",".join(arrivable_line_names)):
+    print(f"Received {query=}")
+    received = time_now()
+    try:
+        for line_csv in lines.split(","):
+            err_msg = f"Received unknown line: {line_csv!r}. Choose from: {arrivable_line_names}"
+            assert line_csv in arrivable_line_names, err_msg
+        result_models = tube.fetch.line.arrivals_by_ids_stop(ids=lines, stopPointId=query)
+        results = [rm.model_dump() for rm in result_models]
+    except Exception as exc:
+        return Error(
+            context=MetaData(request_time=received, query=query), error=str(exc)
+        )
+    else:
+        return Response(
+            context=MetaData(request_time=received, query=query), results=results
+        )
+
 
 def serve():
     import uvicorn
