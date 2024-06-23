@@ -20,6 +20,7 @@ port = int(os.environ.get("PORT", 4000))
 lines = tube.load_lines()
 lines_by_station = tube.load_lines_by_station()
 stations = tube.load_stations()
+platforms = tube.load_platforms_with_stations_and_services()
 station_points = tube.load_station_points().join(stations, on="StationUniqueId")
 station_centroids = (
     station_points.filter(
@@ -116,6 +117,22 @@ def read_stations(request: Request, query: str = "SELECT * FROM self;"):
     received = time_now()
     try:
         results = stations.sql(query).to_dicts()
+    except Exception as exc:
+        return Error(
+            context=MetaData(request_time=received, query=query), error=str(exc)
+        )
+    else:
+        return Response(
+            context=MetaData(request_time=received, query=query), results=results
+        )
+
+
+@app.get("/platforms")
+def read_platforms(request: Request, query: str = "SELECT * FROM self;"):
+    print(f"Received {query=}")
+    received = time_now()
+    try:
+        results = platforms.sql(query).to_dicts()
     except Exception as exc:
         return Error(
             context=MetaData(request_time=received, query=query), error=str(exc)
