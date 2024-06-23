@@ -313,9 +313,9 @@ export default function JourneyPlanner() {
       }
     };
 
-    initializeData();
-    fetchPlatformData();
     fetchTubeDisruptions();
+    fetchPlatformData();
+    initializeData();
   }, []);
 
   useEffect(() => {
