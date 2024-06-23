@@ -7,74 +7,7 @@ import 'react-leaflet-fullscreen/styles.css';
 import L from 'leaflet';
 import { Bug, AlertTriangle } from 'lucide-react';
 import { getFareZoneColor, DEFAULT_CENTER, DEFAULT_ZOOM, MapContent } from './MapContent';
-
-const API_BASE_URL = 'https://tb8.onrender.com';
-
-// API functions
-const fetchStations = async () => {
-  const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent('SELECT DISTINCT StationName FROM self ORDER BY StationName;')}`);
-  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-  const data = await response.json();
-  return data.results.map(station => ({ 
-    value: station.StationName, 
-    label: station.StationName 
-  }));
-};
-
-const fetchJourneyData = async (stationNames) => {
-  const names = stationNames.map(name => `'${name.replace("'", "''")}'`).join(', ');
-  const query = `SELECT * FROM self WHERE StationName IN (${names});`;
-  const response = await fetch(`${API_BASE_URL}/station-points?query=${encodeURIComponent(query)}`);
-  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-  const data = await response.json();
-  
-  // Group points by station name
-  const stationMap = data.results.reduce((acc, point) => {
-    if (typeof point.Lat === 'number' && typeof point.Lon === 'number' && !isNaN(point.Lat) && !isNaN(point.Lon)) {
-      if (!acc[point.StationName]) {
-        acc[point.StationName] = {
-          name: point.StationName,
-          points: []
-        };
-      }
-      acc[point.StationName].points.push({
-        id: point.UniqueId,
-        lat: point.Lat,
-        lon: point.Lon,
-        area: point.AreaName,
-        level: point.Level,
-        fareZones: point.FareZones,
-        wifi: point.Wifi
-      });
-    }
-    return acc;
-  }, {});
-
-  return Object.values(stationMap);
-};
-
-const fetchCentroids = async () => {
-  const query = 'SELECT DISTINCT ON (StationUniqueId) * FROM self;';
-  const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent(query)}`);
-  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-  const data = await response.json();
-  return data.results.filter(centroid => 
-    typeof centroid.Lat === 'number' && 
-    typeof centroid.Lon === 'number' &&
-    !isNaN(centroid.Lat) && 
-    !isNaN(centroid.Lon)
-  ).reduce((acc, centroid) => {
-    acc[centroid.StationName] = {
-      id: centroid.StationUniqueId,
-      name: centroid.StationName,
-      lat: centroid.Lat,
-      lon: centroid.Lon,
-      fareZones: centroid.FareZones,
-      wifi: centroid.Wifi
-    };
-    return acc;
-  }, {});
-};
+import { fetchStations, fetchJourneyData, fetchCentroids, fetchTubeDisruptions, fetchPlatformData } from './api_functions';
 
 // Haversine formula to calculate distance between two points
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
@@ -107,58 +40,23 @@ export default function JourneyPlanner() {
   const [platformData, setPlatformData] = useState({});
 
   useEffect(() => {
-    const fetchTubeDisruptions = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/disruption-by-modes?query=tube`);
-        if (!response.ok) throw new Error('Failed to fetch tube disruptions');
-        const data = await response.json();
-        if (data.success && data.results) {
-          setTubeDisruptions(data.results);
-        } else {
-          throw new Error('Invalid disruption data format');
-        }
-      } catch (err) {
-        console.error('Error fetching tube disruptions:', err);
-        setError('Failed to fetch tube disruptions. Please try again later.');
-      }
-    };
-
-    const fetchPlatformData = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/platforms?query=${encodeURIComponent('SELECT * FROM self;')}`);
-        if (!response.ok) throw new Error('Failed to fetch platform data');
-        const data = await response.json();
-        if (data.success && data.results) {
-          const platforms = data.results.reduce((acc, platform) => {
-            if (!acc[platform.StationName]) {
-              acc[platform.StationName] = [];
-            }
-            acc[platform.StationName].push(platform);
-            return acc;
-          }, {});
-          setPlatformData(platforms);
-          console.log("Platform data fetched:", platforms);
-        } else {
-          throw new Error('Invalid platform data format');
-        }
-      } catch (err) {
-        console.error('Error fetching platform data:', err);
-        setError('Failed to fetch platform data. Please try again later.');
-      }
-    };
-
     const initializeData = async () => {
       try {
-        const [stationList, centroidData] = await Promise.all([fetchStations(), fetchCentroids()]);
-        setStationOptions(stationList);
-        setAllCentroids(centroidData);
+        const [stations, centroids, disruptions, platforms] = await Promise.all([
+		fetchStations(),
+		fetchCentroids(),
+		fetchTubeDisruptions(),
+		fetchPlatformData()
+	]);
+        setStationOptions(stations);
+        setAllCentroids(centroids);
+        setTubeDisruptions(disruptions);
+        setPlatformData(platforms);
       } catch (err) {
         setError("Failed to initialize data: " + err.message);
       }
     };
 
-    fetchTubeDisruptions();
-    fetchPlatformData();
     initializeData();
   }, []);
 
