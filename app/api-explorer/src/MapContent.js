@@ -36,8 +36,7 @@ const getLowestFareZone = (fareZones) => {
 const createStationIcon = (color, size = 24) => {
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="10" fill="black" />
-      <circle cx="12" cy="12" r="8" fill="${color}" />
+      <circle cx="12" cy="12" r="9" fill="${color}" stroke="black" stroke-width="2" stroke-dasharray="2,2"/>
     </svg>`;
 
     return L.divIcon({
