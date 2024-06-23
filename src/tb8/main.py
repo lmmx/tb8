@@ -36,6 +36,10 @@ station_centroids = (
 )
 stations = stations.join(station_centroids, on="StationUniqueId")
 
+modes = {mode.ModeName: mode for mode in tube.fetch.line.meta_modes()}
+undisrupted_modes = "interchange-keep-sitting,interchange-secure,walking".split(",")
+disrupted_modes = [m for m in modes if m not in undisrupted_modes]
+
 def time_now() -> AwareDatetime:
     return datetime.utcnow().replace(tzinfo=timezone.utc)
 
@@ -128,6 +132,26 @@ def read_station_points(request: Request, query: str = "SELECT * FROM self;"):
     received = time_now()
     try:
         results = station_points.sql(query).to_dicts()
+    except Exception as exc:
+        return Error(
+            context=MetaData(request_time=received, query=query), error=str(exc)
+        )
+    else:
+        return Response(
+            context=MetaData(request_time=received, query=query), results=results
+        )
+
+
+@app.get("/disruption-by-modes")
+def read_disruption_by_modes(request: Request, query: str = ",".join(disrupted_modes)):
+    print(f"Received {query=}")
+    received = time_now()
+    try:
+        for mode_csv in query.split(","):
+            err_msg = f"Received unknown mode: {mode_csv!r}. Choose from: {list(disrupted_modes)}"
+            assert mode_csv in disrupted_modes, err_msg
+        result_models = tube.fetch.line.disruption_by_modes(modes=query)
+        results = [rm.model_dump() for rm in result_models]
     except Exception as exc:
         return Error(
             context=MetaData(request_time=received, query=query), error=str(exc)
