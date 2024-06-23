@@ -96,3 +96,16 @@ export const fetchPlatformData = async () => {
     throw new Error('Invalid platform data format');
   }
 };
+
+export const fetchRouteData = async () => {
+  const response = await fetch(`${API_BASE_URL}/route-by-modes?query=tube`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return await response.json();
+};
+
+export const fetchArrivalsByLines = async (lines) => {
+  const lineQuery = lines.join(',');
+  const response = await fetch(`${API_BASE_URL}/arrivals-by-lines?query=${lineQuery}`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return await response.json();
+};

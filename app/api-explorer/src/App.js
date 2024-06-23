@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
-import { FullscreenControl } from 'react-leaflet-fullscreen';
+import { MapContainer } from 'react-leaflet';
 import Select from 'react-select';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
-import L from 'leaflet';
 import { Bug, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { getFareZoneColor, DEFAULT_CENTER, DEFAULT_ZOOM, MapContent } from './MapContent';
-import { fetchStations, fetchJourneyData, fetchCentroids, fetchTubeDisruptions, fetchPlatformData } from './api_functions';
+import { fetchStations, fetchJourneyData, fetchCentroids, fetchTubeDisruptions, fetchRouteData, fetchArrivalsByLines } from './api_functions';
 
 // Haversine formula to calculate distance between two points
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
@@ -38,18 +36,22 @@ export default function JourneyPlanner() {
   const [debugMode, setDebugMode] = useState(false);
   const [tubeDisruptions, setTubeDisruptions] = useState([]);
   const [isDisruptionsCollapsed, setIsDisruptionsCollapsed] = useState(true);
+  const [routeData, setRouteData] = useState(null);
+  const [arrivalData, setArrivalData] = useState(null);
 
   useEffect(() => {
     const initializeData = async () => {
       try {
-        const [stations, centroids, disruptions] = await Promise.all([
+        const [stations, centroids, disruptions, routes] = await Promise.all([
 		fetchStations(),
 		fetchCentroids(),
 		fetchTubeDisruptions(),
+		fetchRouteData(),
 	]);
         setStationOptions(stations);
         setAllCentroids(centroids);
         setTubeDisruptions(disruptions);
+	setRouteData(routes);
       } catch (err) {
         setError("Failed to initialize data: " + err.message);
       }
@@ -99,6 +101,59 @@ export default function JourneyPlanner() {
 
   const handleStationSelect = (selectedOptions) => {
     setSelectedStations(selectedOptions || []);
+  };
+
+  const findRouteBetweenStations = (origin, destination) => {
+    if (!routeData) return null;
+
+    for (const line of routeData.results) {
+      for (const section of line.RouteSections) {
+        if (section.OriginationName === origin && section.DestinationName === destination) {
+          return { line: line.Name, section };
+        }
+      }
+    }
+    return null;
+  };
+
+  const planJourney = async (origin, destination) => {
+    console.log("Planning journey:",origin, destination);
+    setLoading(true);
+    setError(null);
+    try {
+      const route = findRouteBetweenStations(origin.value, destination.value);
+      if (!route) {
+        setError("No direct route found between the selected stations.");
+        return;
+      }
+
+      const arrivals = await fetchArrivalsByLines([route.line.toLowerCase()]);
+      const relevantArrivals = arrivals.results.filter(
+        arrival => arrival.StationName === origin.value && arrival.DestinationName === destination.value
+      );
+
+      if (relevantArrivals.length === 0) {
+        setError("No upcoming trains found for this route.");
+        return;
+      }
+
+      const nextTrain = relevantArrivals[0];
+      const plannedJourney = {
+        origin: origin.value,
+        destination: destination.value,
+        line: route.line,
+        departureTime: nextTrain.ExpectedArrival,
+        arrivalTime: null, // We don't have this information from the API
+        platform: nextTrain.PlatformName,
+        towards: nextTrain.Towards
+      };
+
+      setJourney(plannedJourney);
+    } catch (err) {
+      setError("Failed to plan journey: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // This function represents how an API might return the journey data
@@ -261,6 +316,26 @@ export default function JourneyPlanner() {
                 )}
               </div>
             )}
+            <div>
+              {/* Add a button or form to trigger journey planning */}
+              <button
+                onClick={() => planJourney(selectedStations[0], selectedStations[1])}
+                className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Plan Journey
+              </button>
+              
+              {journey && (
+                <div>
+                  <h2>Planned Journey</h2>
+                  <p>From {journey.origin} to {journey.destination}</p>
+                  <p>Take the {journey.line} line</p>
+                  <p>Next train departs at: {new Date(journey.departureTime).toLocaleTimeString()}</p>
+                  <p>From platform: {journey.platform}</p>
+                  <p>Towards: {journey.towards}</p>
+                </div>
+              )}
+            </div>
             <div className="bg-gray-50 rounded-lg p-4 shadow-md">
               <h3 className="text-xl font-semibold mb-3 text-gray-700">Legend</h3>
               <div className="flex mb-3">
