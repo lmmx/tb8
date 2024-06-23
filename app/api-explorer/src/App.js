@@ -5,7 +5,7 @@ import Select from 'react-select';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
 import L from 'leaflet';
-import { Bug, AlertTriangle } from 'lucide-react';
+import { Bug, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { getFareZoneColor, DEFAULT_CENTER, DEFAULT_ZOOM, MapContent } from './MapContent';
 import { fetchStations, fetchJourneyData, fetchCentroids, fetchTubeDisruptions, fetchPlatformData } from './api_functions';
 
@@ -37,6 +37,7 @@ export default function JourneyPlanner() {
   const [loading, setLoading] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [tubeDisruptions, setTubeDisruptions] = useState([]);
+  const [isDisruptionsCollapsed, setIsDisruptionsCollapsed] = useState(true);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -147,6 +148,10 @@ export default function JourneyPlanner() {
     setDebugMode(!debugMode);
   };
 
+  const toggleDisruptions = () => {
+    setIsDisruptionsCollapsed(!isDisruptionsCollapsed);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 p-6">
       <div className="container mx-auto max-w-6xl bg-white rounded-lg shadow-lg p-6">
@@ -233,22 +238,29 @@ export default function JourneyPlanner() {
                 </div>
               )}
             </div>
-          {tubeDisruptions.length > 0 && (
-            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded">
-              <div className="flex items-center mb-2">
-                <AlertTriangle className="mr-2" />
-                <h3 className="font-bold">Tube Disruptions</h3>
+           {tubeDisruptions.length > 0 && (
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <AlertTriangle className="mr-2" />
+                    <h3 className="font-bold">Tube Disruptions ({tubeDisruptions.length})</h3>
+                  </div>
+                  <button onClick={toggleDisruptions} className="focus:outline-none">
+                    {isDisruptionsCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                  </button>
+                </div>
+                {!isDisruptionsCollapsed && (
+                  <ul className="list-disc pl-5">
+                    {tubeDisruptions.map((disruption, index) => (
+                      <li key={index} className="mb-2">
+                        <strong>{disruption.Type}: </strong>
+                        {disruption.Description}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              <ul className="list-disc pl-5">
-                {tubeDisruptions.map((disruption, index) => (
-                  <li key={index} className="mb-2">
-                    <strong>{disruption.Type}: </strong>
-                    {disruption.Description}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+            )}
             <div className="bg-gray-50 rounded-lg p-4 shadow-md">
               <h3 className="text-xl font-semibold mb-3 text-gray-700">Legend</h3>
               <div className="flex mb-3">
