@@ -99,6 +99,20 @@ function MapContent({ journey, allCentroids }) {
                   <p>Level: {point.level}</p>
                   <p>Fare Zones: {point.fareZones}</p>
                   <p>WiFi: {point.wifi ? 'Available' : 'Not Available'}</p>
+                  {station.centroid.platforms && station.centroid.platforms.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mt-2">Platforms:</h4>
+                      <ul className="list-disc pl-5">
+                        {station.centroid.platforms.map(platform => (
+                          <li key={platform.PlatformUniqueId}>
+                            {platform.PlatformFriendlyName || platform.PlatformNumber} 
+                            {platform.CardinalDirection && ` (${platform.CardinalDirection})`}
+                            {platform.Line && ` - ${platform.Line}`}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </Popup>
             </Marker>
@@ -119,6 +133,20 @@ function MapContent({ journey, allCentroids }) {
                 <h3 className="font-bold">{centroid.name}</h3>
                 <p>Fare Zones: {centroid.fareZones}</p>
                 <p>WiFi: {centroid.wifi ? 'Available' : 'Not Available'}</p>
+                {centroid.platforms && centroid.platforms.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mt-2">Platforms:</h4>
+                    <ul className="list-disc pl-5">
+                      {centroid.platforms.map(platform => (
+                        <li key={platform.PlatformUniqueId}>
+                          {platform.PlatformFriendlyName || platform.PlatformNumber} 
+                          {platform.CardinalDirection && ` (${platform.CardinalDirection})`}
+                          {platform.Line && ` - ${platform.Line}`}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </Popup>
           </Marker>
@@ -232,6 +260,7 @@ export default function JourneyPlanner() {
   const [loading, setLoading] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [tubeDisruptions, setTubeDisruptions] = useState([]);
+  const [platformData, setPlatformData] = useState({});
 
   useEffect(() => {
     const fetchTubeDisruptions = async () => {
@@ -250,6 +279,32 @@ export default function JourneyPlanner() {
       }
     };
     fetchTubeDisruptions();
+
+    const fetchPlatformData = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/platforms?query=${encodeURIComponent('SELECT * FROM self;')}`);
+        if (!response.ok) throw new Error('Failed to fetch platform data');
+        const data = await response.json();
+        if (data.success && data.results) {
+          const platforms = data.results.reduce((acc, platform) => {
+            if (!acc[platform.StationName]) {
+              acc[platform.StationName] = [];
+            }
+            acc[platform.StationName].push(platform);
+            return acc;
+          }, {});
+          setPlatformData(platforms);
+          console.log("Platform data fetched:", platforms);
+        } else {
+          throw new Error('Invalid platform data format');
+        }
+      } catch (err) {
+        console.error('Error fetching platform data:', err);
+        setError('Failed to fetch platform data. Please try again later.');
+      }
+    };
+
+    fetchPlatformData();
   }, []);
 
   useEffect(() => {
@@ -273,10 +328,23 @@ export default function JourneyPlanner() {
         try {
           const stationNames = selectedStations.map(station => station.value);
           const journeyData = await fetchJourneyData(stationNames);
-          const journeyStations = journeyData.map(station => ({
-            ...station,
-            centroid: allCentroids[station.name]
-          }));
+          // const journeyStations = journeyData.map(station => ({
+          //   ...station,
+          //   centroid: allCentroids[station.name],
+          //   platforms: platformData[station.name] || []
+          // }));
+          const journeyStations = journeyData.map(station => {
+            const centroid = allCentroids[station.name];
+            const stationWithPlatforms = {
+              ...station,
+              centroid: {
+                ...centroid,
+		platforms: platformData[station.name] || []
+	      }
+            };
+            console.log("Station with platforms:", stationWithPlatforms);
+            return stationWithPlatforms;
+          });
           // Ensure the stations are in the same order as they were selected
           const orderedJourneyStations = stationNames.map(name => 
             journeyStations.find(station => station.name === name)
@@ -298,7 +366,7 @@ export default function JourneyPlanner() {
       }
     };
     updateJourney();
-  }, [selectedStations, allCentroids]);
+  }, [selectedStations, allCentroids, platformData]);
 
   const calculateJourneyPath = (stations) => {
     return stations.map(station => [station.centroid.lat, station.centroid.lon]);
@@ -415,6 +483,21 @@ export default function JourneyPlanner() {
                   <p>Total Stations: {journey.stations.length}</p>
                   <p>Total Distance: {calculateTotalDistance(journey.path)} km</p>
                   <p>Fare Zones: {calculateFareZones(journey.stations).join(', ')}</p>
+                  <div className="mt-2">
+                    <h4 className="font-semibold">Stations and Platforms:</h4>
+                    <ul className="list-disc pl-5">
+                       {journey.stations.map((station, index) => (
+                        <li key={index}>
+                          {station.name} 
+                          {station.centroid.platforms && station.centroid.platforms.length > 0 ? (
+                            <span> - {station.centroid.platforms.length} platform(s)</span>
+                          ) : (
+                            <span> - No platform data</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   {debugMode && (
                     <button 
                       onClick={logJourneyData}
