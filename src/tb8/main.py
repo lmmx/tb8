@@ -18,6 +18,7 @@ app.add_middleware(
 port = int(os.environ.get("PORT", 4000))
 
 lines = tube.load_lines()
+arrivable_line_names = lines.filter(pl.col("Name") != "national-rail")["Name"].unique().sort().to_list()
 lines_by_station = tube.load_lines_by_station()
 stations = tube.load_stations()
 platforms = tube.load_platforms_with_stations_and_services()
@@ -188,6 +189,25 @@ def read_route_by_modes(request: Request, query: str = "tube"):
             err_msg = f"Received unknown mode: {mode_csv!r}. Choose from: {list(disrupted_modes)}"
             assert mode_csv in disrupted_modes, err_msg
         result_models = tube.fetch.line.route_by_modes(modes=query)
+        results = [rm.model_dump() for rm in result_models]
+    except Exception as exc:
+        return Error(
+            context=MetaData(request_time=received, query=query), error=str(exc)
+        )
+    else:
+        return Response(
+            context=MetaData(request_time=received, query=query), results=results
+        )
+
+@app.get("/arrivals-by-lines")
+def read_arrivals_by_lines(request: Request, query: str = ",".join(arrivable_line_names)):
+    print(f"Received {query=}")
+    received = time_now()
+    try:
+        for line_csv in query.split(","):
+            err_msg = f"Received unknown line: {line_csv!r}. Choose from: {arrivable_line_names}"
+            assert line_csv in arrivable_line_names, err_msg
+        result_models = tube.fetch.line.arrivals_by_ids(ids=query)
         results = [rm.model_dump() for rm in result_models]
     except Exception as exc:
         return Error(
