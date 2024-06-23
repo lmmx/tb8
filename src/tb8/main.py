@@ -179,6 +179,25 @@ def read_disruption_by_modes(request: Request, query: str = ",".join(disrupted_m
         )
 
 
+@app.get("/route-by-modes")
+def read_route_by_modes(request: Request, query: str = "tube"):
+    print(f"Received {query=}")
+    received = time_now()
+    try:
+        for mode_csv in query.split(","):
+            err_msg = f"Received unknown mode: {mode_csv!r}. Choose from: {list(disrupted_modes)}"
+            assert mode_csv in disrupted_modes, err_msg
+        result_models = tube.fetch.line.route_by_modes(modes=query)
+        results = [rm.model_dump() for rm in result_models]
+    except Exception as exc:
+        return Error(
+            context=MetaData(request_time=received, query=query), error=str(exc)
+        )
+    else:
+        return Response(
+            context=MetaData(request_time=received, query=query), results=results
+        )
+
 def serve():
     import uvicorn
 
