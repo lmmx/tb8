@@ -21,14 +21,13 @@ export const getLineColor = (line) => {
   return lineColors[line.toLowerCase()] || '#6f6f6f'; // Default to grey for unknown lines
 };
 
-// Function to create SVG roundel
 const createRoundel = (color) => {
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="32" viewBox="0 0 640 520">
+    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" viewBox="0 0 480 390">
       <title>Tube Roundel</title>
       <g stroke="${color}" fill="none">
-        <path d="M 0,260 H 640" stroke-width="100" />
-        <circle cx="320" cy="260" r="215" stroke-width="90" />
+        <path d="M 0,195 H 480" stroke-width="75" />
+        <circle cx="240" cy="195" r="161.25" stroke-width="67.5" />
       </g>
     </svg>
   `;
