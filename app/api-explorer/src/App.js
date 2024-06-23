@@ -5,7 +5,7 @@ import Select from 'react-select';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
 import L from 'leaflet';
-import { Bug } from 'lucide-react';
+import { Bug, AlertTriangle } from 'lucide-react';
 
 const API_BASE_URL = 'https://tb8.onrender.com';
 
@@ -231,6 +231,22 @@ export default function JourneyPlanner() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
+  const [tubeDisruptions, setTubeDisruptions] = useState([]);
+
+  useEffect(() => {
+    const fetchTubeDisruptions = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/disruption-by-modes?query=tube`);
+        if (!response.ok) throw new Error('Failed to fetch tube disruptions');
+        const data = await response.json();
+        setTubeDisruptions(data);
+      } catch (err) {
+        console.error('Error fetching tube disruptions:', err);
+        setError('Failed to fetch tube disruptions. Please try again later.');
+      }
+    };
+    fetchTubeDisruptions();
+  }, []);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -406,6 +422,19 @@ export default function JourneyPlanner() {
                 </div>
               )}
             </div>
+            {tubeDisruptions.length > 0 && (
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded">
+                <div className="flex items-center mb-2">
+                  <AlertTriangle className="mr-2" />
+                  <h3 className="font-bold">Tube Disruptions</h3>
+                </div>
+                <ul className="list-disc pl-5">
+                  {tubeDisruptions.map((disruption, index) => (
+                    <li key={index}>{disruption.description}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="bg-gray-50 rounded-lg p-4 shadow-md">
               <h3 className="text-xl font-semibold mb-3 text-gray-700">Legend</h3>
               <div className="flex mb-3">
