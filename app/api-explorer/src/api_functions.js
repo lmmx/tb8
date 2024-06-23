@@ -5,7 +5,7 @@ export const fetchStations = async () => {
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
   return data.results.map(station => ({ 
-    value: station.StationName, 
+    value: station.StationUniqueId, 
     label: station.StationName 
   }));
 };
@@ -106,6 +106,12 @@ export const fetchRouteData = async () => {
 export const fetchArrivalsByLines = async (lines) => {
   const lineQuery = lines.join(',');
   const response = await fetch(`${API_BASE_URL}/arrivals-by-lines?query=${lineQuery}`);
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return await response.json();
+};
+
+export const fetchArrivalsByStation = async (stationId) => {
+  const response = await fetch(`${API_BASE_URL}/arrivals-by-station?query=${stationId}`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   return await response.json();
 };
