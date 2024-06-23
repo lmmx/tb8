@@ -47,6 +47,7 @@ export const fetchCentroids = async () => {
   const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent(query)}`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
+  const platformData = await fetchPlatformData();
   return data.results.filter(centroid => 
     typeof centroid.Lat === 'number' && 
     typeof centroid.Lon === 'number' &&
@@ -59,7 +60,8 @@ export const fetchCentroids = async () => {
       lat: centroid.Lat,
       lon: centroid.Lon,
       fareZones: centroid.FareZones,
-      wifi: centroid.Wifi
+      wifi: centroid.Wifi,
+      platforms: platformData[centroid.StationName] || []
     };
     return acc;
   }, {});

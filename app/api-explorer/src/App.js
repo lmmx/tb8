@@ -37,21 +37,18 @@ export default function JourneyPlanner() {
   const [loading, setLoading] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [tubeDisruptions, setTubeDisruptions] = useState([]);
-  const [platformData, setPlatformData] = useState({});
 
   useEffect(() => {
     const initializeData = async () => {
       try {
-        const [stations, centroids, disruptions, platforms] = await Promise.all([
+        const [stations, centroids, disruptions] = await Promise.all([
 		fetchStations(),
 		fetchCentroids(),
 		fetchTubeDisruptions(),
-		fetchPlatformData()
 	]);
         setStationOptions(stations);
         setAllCentroids(centroids);
         setTubeDisruptions(disruptions);
-        setPlatformData(platforms);
       } catch (err) {
         setError("Failed to initialize data: " + err.message);
       }
@@ -68,23 +65,10 @@ export default function JourneyPlanner() {
         try {
           const stationNames = selectedStations.map(station => station.value);
           const journeyData = await fetchJourneyData(stationNames);
-          // const journeyStations = journeyData.map(station => ({
-          //   ...station,
-          //   centroid: allCentroids[station.name],
-          //   platforms: platformData[station.name] || []
-          // }));
-          const journeyStations = journeyData.map(station => {
-            const centroid = allCentroids[station.name];
-            const stationWithPlatforms = {
-              ...station,
-              centroid: {
-                ...centroid,
-		platforms: platformData[station.name] || []
-	      }
-            };
-            console.log("Station with platforms:", stationWithPlatforms);
-            return stationWithPlatforms;
-          });
+          const journeyStations = journeyData.map(station => ({
+            ...station,
+            centroid: allCentroids[station.name],
+          }));
           // Ensure the stations are in the same order as they were selected
           const orderedJourneyStations = stationNames.map(name => 
             journeyStations.find(station => station.name === name)
@@ -106,7 +90,7 @@ export default function JourneyPlanner() {
       }
     };
     updateJourney();
-  }, [selectedStations, allCentroids, platformData]);
+  }, [selectedStations, allCentroids]);
 
   const calculateJourneyPath = (stations) => {
     return stations.map(station => [station.centroid.lat, station.centroid.lon]);
