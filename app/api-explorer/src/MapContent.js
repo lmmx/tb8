@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import { FullscreenControl } from 'react-leaflet-fullscreen';
 import L from 'leaflet';
+import { renderLineRoundels } from './LineRoundels';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
 
@@ -93,22 +94,9 @@ function MapContent({ journey, allCentroids }) {
                   <h3 className="font-bold">{station.name}</h3>
                   <p>Area: {point.area}</p>
                   <p>Level: {point.level}</p>
-                  <p>Fare Zones: {point.fareZones}</p>
+                  <p>Zones: {point.fareZones}</p>
                   <p>WiFi: {point.wifi ? 'Available' : 'Not Available'}</p>
-                  {station.centroid.platforms && station.centroid.platforms.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold mt-2">Platforms:</h4>
-                      <ul className="list-disc pl-5">
-                        {station.centroid.platforms.map(platform => (
-                          <li key={platform.PlatformUniqueId}>
-                            {platform.PlatformFriendlyName || platform.PlatformNumber} 
-                            {platform.CardinalDirection && ` (${platform.CardinalDirection})`}
-                            {platform.Line && ` - ${platform.Line}`}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+		  {renderLineRoundels(station.centroid.platforms)}
                 </div>
               </Popup>
             </Marker>
@@ -127,22 +115,9 @@ function MapContent({ journey, allCentroids }) {
             <Popup>
               <div className="custom-popup">
                 <h3 className="font-bold">{centroid.name}</h3>
-                <p>Fare Zones: {centroid.fareZones}</p>
+                <p>Zones: {centroid.fareZones}</p>
                 <p>WiFi: {centroid.wifi ? 'Available' : 'Not Available'}</p>
-                {centroid.platforms && centroid.platforms.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mt-2">Platforms:</h4>
-                    <ul className="list-disc pl-5">
-                      {centroid.platforms.map(platform => (
-                        <li key={platform.PlatformUniqueId}>
-                          {platform.PlatformFriendlyName || platform.PlatformNumber} 
-                          {platform.CardinalDirection && ` (${platform.CardinalDirection})`}
-                          {platform.Line && ` - ${platform.Line}`}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+		{renderLineRoundels(centroid.platforms)}
               </div>
             </Popup>
           </Marker>
