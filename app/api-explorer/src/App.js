@@ -35,6 +35,7 @@ export default function App() {
           value: station.id,
           label: station.name
         }));
+        stations.sort((a, b) => a.label.localeCompare(b.label));
         setStationOptions(stations);
         setAllCentroids(centroids);
         setTubeDisruptions(disruptions);
