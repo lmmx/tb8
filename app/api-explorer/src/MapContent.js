@@ -95,7 +95,7 @@ function MapContent({ journey, allCentroids }) {
                   <p>Level: {point.level}</p>
                   <p>Zones: {point.fareZones}</p>
                   <p>WiFi: {point.wifi ? 'Available' : 'Not Available'}</p>
-		  {renderLineRoundels(station.centroid.platforms)}
+		  {renderLineRoundels(station.centroid.platforms.platforms)}
                 </div>
               </Popup>
             </Marker>
@@ -116,7 +116,7 @@ function MapContent({ journey, allCentroids }) {
                 <h3 className="font-bold">{centroid.name}</h3>
                 <p>Zones: {centroid.fareZones}</p>
                 <p>WiFi: {centroid.wifi ? 'Available' : 'Not Available'}</p>
-		{renderLineRoundels(centroid.platforms)}
+		{renderLineRoundels(centroid.platforms.platforms)}
               </div>
             </Popup>
           </Marker>
