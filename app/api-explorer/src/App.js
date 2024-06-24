@@ -4,8 +4,8 @@ import Select from 'react-select';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
 import { Bug, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
-import { getFareZoneColor, DEFAULT_CENTER, DEFAULT_ZOOM, MapContent } from './MapContent';
-import { fetchStations, fetchJourneyData, fetchCentroids, fetchTubeDisruptions, fetchRouteData, fetchArrivalsByLines, fetchArrivalsByStation } from './api_functions';
+import { getFareZoneColor, DEFAULT_CENTER, DEFAULT_ZOOM, MapContent } from './components/MapContent';
+import { fetchStations, fetchJourneyData, fetchCentroids, fetchTubeDisruptions, fetchRouteData, fetchArrivalsByLines, fetchArrivalsByStation } from './utils/api_functions';
 
 // Haversine formula to calculate distance between two points
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
