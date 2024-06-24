@@ -1,18 +1,19 @@
 const API_BASE_URL = 'https://tb8.onrender.com';
 
 export const fetchStations = async () => {
-  const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent('SELECT DISTINCT StationName FROM self ORDER BY StationName;')}`);
+  const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent('SELECT StationUniqueId, StationName FROM self ORDER BY StationName;')}`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
+	console.log(data.results);
   return data.results.map(station => ({ 
     value: station.StationUniqueId, 
     label: station.StationName 
   }));
 };
 
-export const fetchJourneyData = async (stationNames) => {
-  const names = stationNames.map(name => `'${name.replace("'", "''")}'`).join(', ');
-  const query = `SELECT * FROM self WHERE StationName IN (${names});`;
+export const fetchJourneyData = async (stationIds) => {
+  const ids = stationIds.map(id => `'${id}'`).join(', ');
+  const query = `SELECT * FROM self WHERE StationUniqueId IN (${ids});`;
   const response = await fetch(`${API_BASE_URL}/station-points?query=${encodeURIComponent(query)}`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
@@ -21,6 +22,7 @@ export const fetchJourneyData = async (stationNames) => {
   const stationMap = data.results.reduce((acc, point) => {
     if (typeof point.Lat === 'number' && typeof point.Lon === 'number' && !isNaN(point.Lat) && !isNaN(point.Lon)) {
       if (!acc[point.StationName]) {
+	console.log('5');
         acc[point.StationName] = {
           name: point.StationName,
           points: []

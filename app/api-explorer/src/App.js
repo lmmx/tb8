@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
 import { Bug, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { getFareZoneColor, DEFAULT_CENTER, DEFAULT_ZOOM, MapContent } from './MapContent';
-import { fetchStations, fetchJourneyData, fetchCentroids, fetchTubeDisruptions, fetchRouteData, fetchArrivalsByLines } from './api_functions';
+import { fetchStations, fetchJourneyData, fetchCentroids, fetchTubeDisruptions, fetchRouteData, fetchArrivalsByLines, fetchArrivalsByStation } from './api_functions';
 
 // Haversine formula to calculate distance between two points
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
@@ -66,15 +66,15 @@ export default function JourneyPlanner() {
         setLoading(true);
         setError(null);
         try {
-          const stationNames = selectedStations.map(station => station.value);
-          const journeyData = await fetchJourneyData(stationNames);
+          const stationIds = selectedStations.map(station => station.value);
+          const journeyData = await fetchJourneyData(stationIds);
           const journeyStations = journeyData.map(station => ({
             ...station,
             centroid: allCentroids[station.name],
           }));
           // Ensure the stations are in the same order as they were selected
-          const orderedJourneyStations = stationNames.map(name => 
-            journeyStations.find(station => station.name === name)
+          const orderedJourneyStations = stationIds.map(id => 
+            journeyStations.find(station => station.centroid.id === id)
           );
           const journeyPath = calculateJourneyPath(orderedJourneyStations);
           const newJourney = {
@@ -84,6 +84,7 @@ export default function JourneyPlanner() {
           setJourney(newJourney);
           console.log('Journey Data:', newJourney);
         } catch (err) {
+	  console.log('Error during update journey');
           setError(err.message);
         } finally {
           setLoading(false);
@@ -108,7 +109,7 @@ export default function JourneyPlanner() {
 
     for (const line of routeData.results) {
       for (const section of line.RouteSections) {
-        if (section.OriginationName === origin && section.DestinationName === destination) {
+        if (section.Originator === origin && section.Destination === destination) {
           return { line: line.Name, section };
         }
       }
@@ -127,26 +128,30 @@ export default function JourneyPlanner() {
         return;
       }
 
-      const arrivals = await fetchArrivalsByLines([route.line.toLowerCase()]);
-      const relevantArrivals = arrivals.results.filter(
-        arrival => arrival.StationName === origin.value && arrival.DestinationName === destination.value
-      );
+    const [originArrivals, destinationArrivals] = await Promise.all([
+      fetchArrivalsByStation(origin.value),
+      fetchArrivalsByStation(destination.value)
+    ]);
 
-      if (relevantArrivals.length === 0) {
-        setError("No upcoming trains found for this route.");
-        return;
-      }
+    const relevantArrivals = originArrivals.results.filter(
+      arrival => arrival.DestinationNaptanId === destination.value && arrival.LineId === route.line.toLowerCase()
+    );
 
-      const nextTrain = relevantArrivals[0];
-      const plannedJourney = {
-        origin: origin.value,
-        destination: destination.value,
-        line: route.line,
-        departureTime: nextTrain.ExpectedArrival,
-        arrivalTime: null, // We don't have this information from the API
-        platform: nextTrain.PlatformName,
-        towards: nextTrain.Towards
-      };
+    if (relevantArrivals.length === 0) {
+      setError("No upcoming trains found for this route.");
+      return;
+    }
+
+    const nextTrain = relevantArrivals[0];
+    const plannedJourney = {
+      origin: origin.label,
+      destination: destination.label,
+      line: route.line,
+      departureTime: nextTrain.ExpectedArrival,
+      arrivalTime: null, // We don't have this information from the API
+      platform: nextTrain.PlatformName,
+      towards: nextTrain.Towards
+    };
 
       setJourney(plannedJourney);
     } catch (err) {
@@ -320,6 +325,7 @@ export default function JourneyPlanner() {
               {/* Add a button or form to trigger journey planning */}
               <button
                 onClick={() => planJourney(selectedStations[0], selectedStations[1])}
+                disabled={selectedStations.length !== 2}
                 className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               >
                 Plan Journey
