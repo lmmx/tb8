@@ -105,15 +105,28 @@ export default function JourneyPlanner() {
     setSelectedStations(selectedOptions || []);
   };
 
+  const getStationIds = (station) => {
+    const ids = [station.value];
+    if (station.stopAreaNaptanCode && station.stopAreaNaptanCode !== station.value) {
+      ids.push(station.stopAreaNaptanCode);
+    }
+    return ids;
+  };
+
   const planJourney = async (origin, destination) => {
     console.log("Planning journey:",origin, destination);
     setLoading(true);
     setError(null);
     try {
+      const originIds = getStationIds(origin);
+      const destinationIds = getStationIds(destination);
+
       const [originArrivals, destinationArrivals] = await Promise.all([
-        fetchArrivalsByStation(origin.value),
-        fetchArrivalsByStation(destination.value)
+        fetchArrivalsByStation(originIds),
+        fetchArrivalsByStation(destinationIds)
       ]);
+	    console.log('Origin arrivals:', originArrivals);
+	    console.log('Destination arrivals:', destinationArrivals);
 
       // Find all lines that serve both the origin and destination
       const originLines = new Set(originArrivals.results.map(arrival => arrival.LineId));
@@ -121,13 +134,15 @@ export default function JourneyPlanner() {
       const commonLines = [...originLines].filter(line => destinationLines.has(line));
 
       if (commonLines.length === 0) {
+	      console.log('Origin lines:', originLines);
+	      console.log('Destination lines:', destinationLines);
         setError("No direct line found between the selected stations.");
         return;
       }
 
       // Find all relevant arrivals for the next hour
       const relevantArrivals = originArrivals.results.filter(arrival => 
-        arrival.DestinationNaptanId === destination.value && 
+        destinationIds.includes(arrival.DestinationNaptanId) && 
         commonLines.includes(arrival.LineId) &&
         new Date(arrival.ExpectedArrival) <= new Date(Date.now() + 60 * 60 * 1000) // within the next hour
       );

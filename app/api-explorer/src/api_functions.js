@@ -63,7 +63,8 @@ export const fetchCentroids = async () => {
       lon: centroid.Lon,
       fareZones: centroid.FareZones,
       wifi: centroid.Wifi,
-      platforms: platformData[centroid.StationName] || []
+      platforms: platformData[centroid.StationName] || [],
+      stopAreaNaptanCodes: platformData[centroid.StationName]?.stopAreaNaptanCodes || []
     };
     return acc;
   }, {});
@@ -87,11 +88,21 @@ export const fetchPlatformData = async () => {
   if (data.success && data.results) {
     const platforms = data.results.reduce((acc, platform) => {
       if (!acc[platform.StationName]) {
-        acc[platform.StationName] = [];
-     }
-      acc[platform.StationName].push(platform);
+        acc[platform.StationName] = {
+          platforms: [],
+          stopAreaNaptanCodes: new Set()
+        };
+      }
+      acc[platform.StationName].platforms.push(platform);
+      acc[platform.StationName].stopAreaNaptanCodes.add(platform.StopAreaNaptanCode);
       return acc;
     }, {});
+
+    // Convert Sets to Arrays for easier use
+    Object.values(platforms).forEach(station => {
+      station.stopAreaNaptanCodes = Array.from(station.stopAreaNaptanCodes);
+    });
+
     console.log("Platform data fetched:", platforms);
     return platforms;
   } else {
@@ -112,8 +123,9 @@ export const fetchArrivalsByLines = async (lines) => {
   return await response.json();
 };
 
-export const fetchArrivalsByStation = async (stationId) => {
-  const response = await fetch(`${API_BASE_URL}/arrivals-by-station?query=${stationId}`);
+export const fetchArrivalsByStation = async (stationIds) => {
+  const idsQuery = Array.isArray(stationIds) ? stationIds.join(',') : stationIds;
+  const response = await fetch(`${API_BASE_URL}/arrivals-by-station?query=${idsQuery}`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   return await response.json();
 };
