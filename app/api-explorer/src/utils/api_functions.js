@@ -88,20 +88,11 @@ export const fetchPlatformData = async () => {
   if (data.success && data.results) {
     const platforms = data.results.reduce((acc, platform) => {
       if (!acc[platform.StationName]) {
-        acc[platform.StationName] = {
-          platforms: [],
-          stopAreaNaptanCodes: new Set()
-        };
+        acc[platform.StationName] = []
       }
-      acc[platform.StationName].platforms.push(platform);
-      acc[platform.StationName].stopAreaNaptanCodes.add(platform.StopAreaNaptanCode);
+      acc[platform.StationName].push(platform);
       return acc;
     }, {});
-
-    // Convert Sets to Arrays for easier use
-    Object.values(platforms).forEach(station => {
-      station.stopAreaNaptanCodes = Array.from(station.stopAreaNaptanCodes);
-    });
 
     console.log("Platform data fetched:", platforms);
     return platforms;

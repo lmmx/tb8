@@ -36,7 +36,6 @@ const createRoundel = (color) => {
 // Function to render line roundels
 export const renderLineRoundels = (platforms) => {
   if (!platforms || platforms.length === 0) return null;
-  
   const lines = [...new Set(platforms.map(platform => platform.Line))];
   return (
     <div className="flex flex-wrap gap-1 mt-2">
