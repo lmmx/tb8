@@ -41,6 +41,7 @@ export const createJourneyOptions = (relevantArrivals, origin, destination) => {
     towards: arrival.Towards,
     frequency: null
   }));
+  options.sort((a, b) => a.departureTime.localeCompare(b.departureTime));
 
   if (options.length > 1) {
     const timeDiffs = options.slice(1).map((option, index) => 
