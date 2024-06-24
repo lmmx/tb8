@@ -43,12 +43,15 @@ export default function JourneyPlanner() {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        const [stations, centroids, disruptions, routes] = await Promise.all([
-		fetchStations(),
+        const [centroids, disruptions, routes] = await Promise.all([
 		fetchCentroids(),
 		fetchTubeDisruptions(),
 		fetchRouteData(),
 	]);
+        const stations = Object.values(centroids).map(station => ({
+          value: station.id,
+          label: station.name
+        }));
         setStationOptions(stations);
         setAllCentroids(centroids);
         setTubeDisruptions(disruptions);
@@ -119,22 +122,38 @@ export default function JourneyPlanner() {
     setLoading(true);
     setError(null);
     try {
-      const originIds = getStationIds(origin);
-      const destinationIds = getStationIds(destination);
-	    console.log(`converted origin to IDs:`, origin, originIds);
-	    console.log(`converted destination to IDs:`, destination, destinationIds);
+      const originIds = origin.componentStations;
+      const destinationIds = destination.componentStations;
 
-      const [originArrivals, destinationArrivals] = await Promise.all([
-        fetchArrivalsByStation(originIds),
-        fetchArrivalsByStation(destinationIds)
+      console.log("Origin IDs:", originIds);
+      console.log("Destination IDs:", destinationIds);
+
+      const fetchArrivals = async (ids) => {
+        const arrivals = await Promise.all(ids.map(async (id) => {
+          try {
+            const response = await fetchArrivalsByStation(id);
+            return response.results || [];
+          } catch (error) {
+            console.error(`Error fetching arrivals for station ${id}:`, error);
+            return [];
+          }
+        }));
+        return arrivals.flat();
+      };
+
+      const [allOriginArrivals, allDestinationArrivals] = await Promise.all([
+        fetchArrivals(originIds),
+        fetchArrivals(destinationIds)
       ]);
-	    console.log('Origin arrivals:', originArrivals);
-	    console.log('Destination arrivals:', destinationArrivals);
+
+      console.log("Origin arrivals:", allOriginArrivals);
+      console.log("Destination arrivals:", allDestinationArrivals);
 
       // Find all lines that serve both the origin and destination
-      const originLines = new Set(originArrivals.results.map(arrival => arrival.LineId));
-      const destinationLines = new Set(destinationArrivals.results.map(arrival => arrival.LineId));
+      const originLines = new Set(allOriginArrivals.map(arrival => arrival.LineId));
+      const destinationLines = new Set(allDestinationArrivals.map(arrival => arrival.LineId));
       const commonLines = [...originLines].filter(line => destinationLines.has(line));
+
 
       if (commonLines.length === 0) {
 	      console.log('Origin lines:', originLines);
@@ -144,7 +163,7 @@ export default function JourneyPlanner() {
       }
 
       // Find all relevant arrivals for the next hour
-      const relevantArrivals = originArrivals.results.filter(arrival => 
+      const relevantArrivals = allOriginArrivals.filter(arrival => 
         destinationIds.includes(arrival.DestinationNaptanId) && 
         commonLines.includes(arrival.LineId) &&
         new Date(arrival.ExpectedArrival) <= new Date(Date.now() + 60 * 60 * 1000) // within the next hour
@@ -154,9 +173,10 @@ export default function JourneyPlanner() {
         setError("No upcoming trains found for this route in the next hour.");
         return;
       }
-       const options = relevantArrivals.map(arrival => ({
-        origin: origin.label,
-        destination: destination.label,
+
+      const options = relevantArrivals.map(arrival => ({
+        origin: origin.name,
+        destination: destination.name,
         line: arrival.LineName,
         departureTime: arrival.ExpectedArrival,
         arrivalTime: null, // We don't have this information from the API
@@ -346,7 +366,7 @@ export default function JourneyPlanner() {
             <div>
               {/* Add a button or form to trigger journey planning */}
               <button
-                onClick={() => planJourney(selectedStations[0], selectedStations[1])}
+                onClick={() => planJourney(allCentroids[selectedStations[0].label], allCentroids[selectedStations[1].label])}
                 disabled={selectedStations.length !== 2}
                 className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               >

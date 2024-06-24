@@ -64,7 +64,7 @@ export const fetchCentroids = async () => {
       fareZones: centroid.FareZones,
       wifi: centroid.Wifi,
       platforms: platformData[centroid.StationName] || [],
-      stopAreaNaptanCodes: platformData[centroid.StationName]?.stopAreaNaptanCodes || []
+      componentStations: centroid.ComponentStations
     };
     return acc;
   }, {});
