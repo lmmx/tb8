@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import { FullscreenControl } from 'react-leaflet-fullscreen';
 import L from 'leaflet';
-import { renderLineRoundels } from './LineRoundels';
+import { renderLineRoundels, getLineColor } from './LineRoundels';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
 import { getLowestFareZone, getFareZoneColor, createStationIcon, createCentroidIcon } from '../utils/mapUtils';
@@ -77,6 +77,17 @@ function MapContent({ journey, allCentroids }) {
           smoothFactor={1}
         />
       )}
+      
+      {journey && journey.route && (
+        <Polyline 
+          positions={journey.route.StopPoints.map(stop => [stop.Lat, stop.Lon])}
+          color={getLineColor(journey.route.LineId)}
+          weight={4}
+          opacity={0.8}
+          smoothFactor={1}
+        />
+      )}
+      
       <FullscreenControl />
     </>
   );

@@ -30,32 +30,59 @@ export const getRelevantArrivals = (allOriginArrivals, commonLines) => {
   );
 };
 
-export const createJourneyOptions = (relevantArrivals, origin, destination) => {
-  const options = relevantArrivals.map(arrival => ({
-    origin: origin.name,
-    destination: destination.name,
-    line: arrival.LineName,
-    departureTime: arrival.ExpectedArrival,
-    arrivalTime: null,
-    platform: arrival.PlatformName,
-    towards: arrival.Towards,
-    frequency: null
-  }));
-  options.sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+export const getRouteDirection = (originNaptanId, destinationNaptanId, lineId, routeData) => {
+  const lineRoutes = routeData.filter(route => route.Id === lineId);
+  for (const route of lineRoutes) {
+    const routeSection = route.RouteSections.find(section => 
+     section.Destination === destinationNaptanId
+    );
+    if (routeSection) {
+      return route.Direction;
+    }
+  }
+  return null;
+};
 
-  if (options.length > 1) {
-    const timeDiffs = options.slice(1).map((option, index) => 
-      new Date(option.departureTime) - new Date(options[index].departureTime)
+export const createJourneyOptions = (relevantArrivals, origin, destination, routeData) => {
+  const options = relevantArrivals.map(arrival => {
+    const direction = getRouteDirection(origin.id, arrival.DestinationNaptanId, arrival.LineId, routeData);
+    return {
+      origin: origin.name,
+      destination: destination.name,
+      lineId: arrival.LineId,
+      lineName: arrival.LineName,
+      departureTime: arrival.ExpectedArrival,
+      arrivalTime: null,
+      platform: arrival.PlatformName,
+      towards: arrival.Towards,
+      direction: direction,
+      destinationNaptanId: arrival.DestinationNaptanId,
+      frequency: null
+    };
+  });
+
+	console.log('options::', destination, options);
+  // Filter options to include only those going in the correct direction
+  const filteredOptions = options.filter(option => 
+    option.direction && option.destinationNaptanId === destination.id
+  );
+	console.log('filtered options', filteredOptions);
+
+  filteredOptions.sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+
+  if (filteredOptions.length > 1) {
+    const timeDiffs = filteredOptions.slice(1).map((option, index) => 
+      new Date(option.departureTime) - new Date(filteredOptions[index].departureTime)
     );
     const avgTimeDiff = timeDiffs.reduce((a, b) => a + b, 0) / timeDiffs.length;
     const frequency = Math.round(avgTimeDiff / 60000);
-    options.forEach(option => option.frequency = frequency);
+    filteredOptions.forEach(option => option.frequency = frequency);
   }
 
-  return options;
+  return filteredOptions;
 };
 
-export const createJourney = async (selectedStations, allCentroids) => {
+export const createJourney = async (selectedStations, allCentroids, routeData) => {
   const stationIds = selectedStations.map(station => station.value);
   const journeyData = await fetchJourneyData(stationIds);
   const journeyStations = journeyData.map(station => ({
@@ -66,8 +93,30 @@ export const createJourney = async (selectedStations, allCentroids) => {
     journeyStations.find(station => station.centroid.id === id)
   );
   const journeyPath = calculateJourneyPath(orderedJourneyStations);
+
+  // Find the route for this journey
+  const origin = orderedJourneyStations[0];
+  const destination = orderedJourneyStations[orderedJourneyStations.length - 1];
+  const commonLines = getCommonLines(
+    origin.centroid.platforms, 
+    destination.centroid.platforms
+  );
+  
+  let route = null;
+  if (commonLines.length > 0) {
+    const lineId = commonLines[0];
+    route = routeData.find(r => 
+      r.LineId === lineId && 
+      r.RouteSections.some(section => 
+        section.Originator === origin.centroid.id && 
+        section.Destination === destination.centroid.id
+      )
+    );
+  }
+
   return {
     stations: orderedJourneyStations,
-    path: journeyPath
+    path: journeyPath,
+    route: route
   };
 };

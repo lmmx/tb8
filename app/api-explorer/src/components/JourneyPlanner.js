@@ -5,10 +5,11 @@ import {
   getCommonLines, 
   getRelevantArrivals, 
   createJourneyOptions, 
-  createJourney 
+  createJourney,
+  getRouteDirection
 } from '../utils/plannerUtils';
 
-const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading, setError }) => {
+const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading, setError, routeData }) => {
   const [journeyOptions, setJourneyOptions] = useState([]);
 
   const findCentroidByStationId = (stationId) => {
@@ -47,10 +48,10 @@ const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading
         return;
       }
 
-      const options = createJourneyOptions(relevantArrivals, origin, destination);
+      const options = createJourneyOptions(relevantArrivals, origin, destination, routeData);
       setJourneyOptions(options);
 
-      const newJourney = await createJourney(selectedStations, allCentroids);
+      const newJourney = await createJourney(selectedStations, allCentroids, routeData);
       setJourney(newJourney);
     } catch (err) {
       setError("Failed to plan journey: " + err.message);

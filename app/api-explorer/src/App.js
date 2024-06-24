@@ -85,6 +85,7 @@ export default function App() {
               setJourney={setJourney}
               setLoading={setLoading}
               setError={setError}
+	      routeData={routeData}
             />
             <Legend />
           </div>
