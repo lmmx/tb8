@@ -161,10 +161,11 @@ export default function JourneyPlanner() {
         setError("No direct line found between the selected stations.");
         return;
       }
+	    console.log('origin and destination have common lines:', commonLines);
 
       // Find all relevant arrivals for the next hour
+	    console.log('all origin arrivals:', allOriginArrivals);
       const relevantArrivals = allOriginArrivals.filter(arrival => 
-        destinationIds.includes(arrival.DestinationNaptanId) && 
         commonLines.includes(arrival.LineId) &&
         new Date(arrival.ExpectedArrival) <= new Date(Date.now() + 60 * 60 * 1000) // within the next hour
       );
