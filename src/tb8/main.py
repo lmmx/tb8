@@ -36,6 +36,8 @@ station_centroids = (
         ]
     )
 )
+substations = platforms.group_by("StationUniqueId").agg(pl.col("StopAreaNaptanCode").unique().alias("ComponentStations"))
+station_centroids = station_centroids.join(substations, on="StationUniqueId", how="left")
 stations = stations.join(station_centroids, on="StationUniqueId")
 
 modes = {mode.ModeName: mode for mode in tube.fetch.line.meta_modes()}

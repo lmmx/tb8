@@ -64,6 +64,7 @@ export default function JourneyPlanner() {
   useEffect(() => {
     const updateJourney = async () => {
       if (selectedStations.length > 0 && allCentroids) {
+	      console.log('allCentroids:', allCentroids);
         setLoading(true);
         setError(null);
         try {
@@ -120,6 +121,8 @@ export default function JourneyPlanner() {
     try {
       const originIds = getStationIds(origin);
       const destinationIds = getStationIds(destination);
+	    console.log(`converted origin to IDs:`, origin, originIds);
+	    console.log(`converted destination to IDs:`, destination, destinationIds);
 
       const [originArrivals, destinationArrivals] = await Promise.all([
         fetchArrivalsByStation(originIds),
