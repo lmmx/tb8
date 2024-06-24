@@ -30,6 +30,7 @@ export default function JourneyPlanner() {
   const [stationOptions, setStationOptions] = useState([]);
   const [selectedStations, setSelectedStations] = useState([]);
   const [journey, setJourney] = useState(null);
+  const [journeyOptions, setJourneyOptions] = useState([]);
   const [allCentroids, setAllCentroids] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -104,62 +105,65 @@ export default function JourneyPlanner() {
     setSelectedStations(selectedOptions || []);
   };
 
-  const findRouteBetweenStations = (origin, destination) => {
-    if (!routeData) return null;
-
-    for (const line of routeData.results) {
-      for (const section of line.RouteSections) {
-        if (section.Originator === origin && section.Destination === destination) {
-          return { line: line.Name, section };
-        }
-      }
-    }
-    return null;
-  };
-
   const planJourney = async (origin, destination) => {
     console.log("Planning journey:",origin, destination);
     setLoading(true);
     setError(null);
     try {
-      const route = findRouteBetweenStations(origin.value, destination.value);
-      if (!route) {
-        setError("No direct route found between the selected stations.");
+      const [originArrivals, destinationArrivals] = await Promise.all([
+        fetchArrivalsByStation(origin.value),
+        fetchArrivalsByStation(destination.value)
+      ]);
+
+      // Find all lines that serve both the origin and destination
+      const originLines = new Set(originArrivals.results.map(arrival => arrival.LineId));
+      const destinationLines = new Set(destinationArrivals.results.map(arrival => arrival.LineId));
+      const commonLines = [...originLines].filter(line => destinationLines.has(line));
+
+      if (commonLines.length === 0) {
+        setError("No direct line found between the selected stations.");
         return;
       }
 
-    const [originArrivals, destinationArrivals] = await Promise.all([
-      fetchArrivalsByStation(origin.value),
-      fetchArrivalsByStation(destination.value)
-    ]);
+      // Find all relevant arrivals for the next hour
+      const relevantArrivals = originArrivals.results.filter(arrival => 
+        arrival.DestinationNaptanId === destination.value && 
+        commonLines.includes(arrival.LineId) &&
+        new Date(arrival.ExpectedArrival) <= new Date(Date.now() + 60 * 60 * 1000) // within the next hour
+      );
 
-    const relevantArrivals = originArrivals.results.filter(
-      arrival => arrival.DestinationNaptanId === destination.value && arrival.LineId === route.line.toLowerCase()
-    );
+      if (relevantArrivals.length === 0) {
+        setError("No upcoming trains found for this route in the next hour.");
+        return;
+      }
+       const options = relevantArrivals.map(arrival => ({
+        origin: origin.label,
+        destination: destination.label,
+        line: arrival.LineName,
+        departureTime: arrival.ExpectedArrival,
+        arrivalTime: null, // We don't have this information from the API
+        platform: arrival.PlatformName,
+        towards: arrival.Towards,
+        frequency: null // We'll calculate this later if possible
+      }));
 
-    if (relevantArrivals.length === 0) {
-      setError("No upcoming trains found for this route.");
-      return;
-    }
+      // Calculate frequency if possible
+      if (options.length > 1) {
+        const timeDiffs = options.slice(1).map((option, index) => 
+          new Date(option.departureTime) - new Date(options[index].departureTime)
+        );
+        const avgTimeDiff = timeDiffs.reduce((a, b) => a + b, 0) / timeDiffs.length;
+        const frequency = Math.round(avgTimeDiff / 60000); // convert to minutes
+        options.forEach(option => option.frequency = frequency);
+      }
 
-    const nextTrain = relevantArrivals[0];
-    const plannedJourney = {
-      origin: origin.label,
-      destination: destination.label,
-      line: route.line,
-      departureTime: nextTrain.ExpectedArrival,
-      arrivalTime: null, // We don't have this information from the API
-      platform: nextTrain.PlatformName,
-      towards: nextTrain.Towards
-    };
-
-      setJourney(plannedJourney);
+      setJourneyOptions(options);
     } catch (err) {
       setError("Failed to plan journey: " + err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }; 
 
   // This function represents how an API might return the journey data
   const getJourneyData = () => {
@@ -331,16 +335,22 @@ export default function JourneyPlanner() {
                 Plan Journey
               </button>
               
-              {journey && (
-                <div>
-                  <h2>Planned Journey</h2>
-                  <p>From {journey.origin} to {journey.destination}</p>
-                  <p>Take the {journey.line} line</p>
-                  <p>Next train departs at: {new Date(journey.departureTime).toLocaleTimeString()}</p>
-                  <p>From platform: {journey.platform}</p>
-                  <p>Towards: {journey.towards}</p>
-                </div>
-              )}
+               {journeyOptions.length > 0 && (
+                  <div>
+                    <h2>Journey Options</h2>
+                    {journeyOptions.map((option, index) => (
+                      <div key={index} className="journey-option">
+                        <p>Option {index + 1}</p>
+                        <p>From {option.origin} to {option.destination}</p>
+                        <p>Take the {option.line} line</p>
+                        <p>Next train departs at: {new Date(option.departureTime).toLocaleTimeString()}</p>
+                        <p>From platform: {option.platform}</p>
+                        <p>Towards: {option.towards}</p>
+                        {option.frequency && <p>Trains run approximately every {option.frequency} minutes</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
             </div>
             <div className="bg-gray-50 rounded-lg p-4 shadow-md">
               <h3 className="text-xl font-semibold mb-3 text-gray-700">Legend</h3>
