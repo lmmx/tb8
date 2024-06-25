@@ -30,23 +30,43 @@ export const getRelevantArrivals = (allOriginArrivals, commonLines) => {
   );
 };
 
-export const getRouteDirection = (originNaptanId, destinationNaptanId, lineId, routeData) => {
-  const lineRoutes = routeData.filter(route => route.Id === lineId);
-  for (const route of lineRoutes) {
-    const routeSection = route.RouteSections.find(section => 
-     section.Destination === destinationNaptanId
+export const getRouteDirection = (origin, destination, lineId, routeSequenceData) => {
+  const relevantRoutes = routeSequenceData.filter(route => 
+    route.LineId === lineId &&
+    route.OrderedLineRoutes.some(lineRoute => 
+      lineRoute.NaptanIds.includes(origin.id) && 
+      lineRoute.NaptanIds.includes(destination.id)
+    )
+  );
+
+  for (const route of relevantRoutes) {
+    const lineRoute = route.OrderedLineRoutes.find(lr => 
+      lr.NaptanIds.includes(origin.id) && lr.NaptanIds.includes(destination.id)
     );
-    if (routeSection) {
-      return route.Direction;
+    if (lineRoute) {
+      const originIndex = lineRoute.NaptanIds.indexOf(origin.id);
+      const destinationIndex = lineRoute.NaptanIds.indexOf(destination.id);
+      return originIndex < destinationIndex ? route.Direction : 
+        (route.Direction === 'inbound' ? 'outbound' : 'inbound');
     }
   }
   return null;
 };
 
-export const createJourneyOptions = (relevantArrivals, origin, destination, routeData) => {
-  const options = relevantArrivals.map(arrival => {
-    const direction = getRouteDirection(origin.id, arrival.DestinationNaptanId, arrival.LineId, routeData);
-    return {
+export const createJourneyOptions = (relevantArrivals, origin, destination, routeSequenceData) => {
+  const options = relevantArrivals.flatMap(arrival => {
+    const directions = origin.componentStations.flatMap(originStation => 
+      destination.componentStations.map(destinationStation => 
+        getRouteDirection(
+          { id: originStation },
+          { id: destinationStation },
+          arrival.LineId,
+          routeSequenceData
+        )
+      )
+    ).filter(Boolean);
+
+    return directions.map(direction => ({
       origin: origin.name,
       destination: destination.name,
       lineId: arrival.LineId,
@@ -58,7 +78,7 @@ export const createJourneyOptions = (relevantArrivals, origin, destination, rout
       direction: direction,
       destinationNaptanId: arrival.DestinationNaptanId,
       frequency: null
-    };
+    }));
   });
 
 	console.log('options::', destination, options);

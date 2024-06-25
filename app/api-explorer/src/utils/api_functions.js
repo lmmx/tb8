@@ -102,13 +102,21 @@ export const fetchPlatformData = async () => {
 };
 
 export const fetchRouteData = async () => {
-  const response = await fetch(`${API_BASE_URL}/route-by-modes?query=tube`);
-  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-  const data = await response.json();
-  if (data.success && data.results) {
-    return data.results;
-  } else {
-    throw new Error('Unsuccessful tube route fetch');
+  try {
+    const routeResponse = await fetch(`${API_BASE_URL}/route-by-modes?query=tube`);
+    const routeData = await routeResponse.json();
+	  console.log('fetched route data', routeData);
+    const routeSequencePromises = routeData.results.flatMap(route => 
+      ['inbound', 'outbound'].map(direction => 
+        fetch(`${API_BASE_URL}/route-sequence-by-line-direction?line=${route.Id}&direction=${direction}`)
+          .then(res => res.json())
+      )
+    );
+    const routeSequenceData = await Promise.all(routeSequencePromises);
+    return { routeData: routeData.results, routeSequenceData: routeSequenceData.flatMap(data => data.results) };
+  } catch (error) {
+    console.error("Error fetching route data:", error);
+    return { routeData: [], routeSequenceData: [] };
   }
 };
 

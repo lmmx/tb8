@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import { FullscreenControl } from 'react-leaflet-fullscreen';
 import L from 'leaflet';
+import RoutePolylines from './RoutePolylines';
 import { renderLineRoundels, getLineColor } from './LineRoundels';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
@@ -10,7 +11,7 @@ import { getLowestFareZone, getFareZoneColor, createStationIcon, createCentroidI
 const DEFAULT_CENTER = [51.505, -0.09];
 const DEFAULT_ZOOM = 10;
 
-function MapContent({ journey, allCentroids }) {
+function MapContent({ journey, allCentroids, routeSequenceData }) {
   const map = useMap();
 
   useEffect(() => {
@@ -87,7 +88,9 @@ function MapContent({ journey, allCentroids }) {
           smoothFactor={1}
         />
       )}
-      
+      {routeSequenceData && (
+        <RoutePolylines routeSequenceData={routeSequenceData} />
+      )}
       <FullscreenControl />
     </>
   );

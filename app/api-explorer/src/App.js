@@ -18,15 +18,17 @@ export default function App() {
   const [journey, setJourney] = useState(null);
   const [allCentroids, setAllCentroids] = useState(null);
   const [error, setError] = useState(null);
+  const [setupIsLoading, setSetupIsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [tubeDisruptions, setTubeDisruptions] = useState([]);
-  const [routeData, setRouteData] = useState(null);
+  const [routeData, setRouteData] = useState({ routes: null, routeSequences: null });
 
   useEffect(() => {
     const initializeData = async () => {
+      setSetupIsLoading(true);
       try {
-        const [centroids, disruptions, routes] = await Promise.all([
+        const [centroids, disruptions, { routeData, routeSequenceData }] = await Promise.all([
           fetchCentroids(),
           fetchTubeDisruptions(),
           fetchRouteData(),
@@ -39,9 +41,11 @@ export default function App() {
         setStationOptions(stations);
         setAllCentroids(centroids);
         setTubeDisruptions(disruptions);
-        setRouteData(routes);
+        setRouteData({ routes: routeData, routeSequences: routeSequenceData });
       } catch (err) {
         setError("Failed to initialize data: " + err.message);
+      } finally {
+        setSetupIsLoading(false);
       }
     };
 
@@ -51,6 +55,10 @@ export default function App() {
   const toggleDebugMode = () => {
     setDebugMode(!debugMode);
   };
+
+  if (setupIsLoading) {
+    console.log("Loading animation goes here"); // return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 p-6">
@@ -62,7 +70,11 @@ export default function App() {
           <div className="w-full md:w-2/3">
             <div className="bg-gray-100 rounded-lg overflow-hidden shadow-md" style={{ height: '600px' }}>
               <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ height: '100%', width: '100%' }}>
-                <MapContent journey={journey} allCentroids={allCentroids} />
+                <MapContent
+	          journey={journey}
+	          allCentroids={allCentroids}
+	          routeSequenceData={routeData.routeSequences}
+	        />
               </MapContainer>
             </div>
           </div>
@@ -85,7 +97,8 @@ export default function App() {
               setJourney={setJourney}
               setLoading={setLoading}
               setError={setError}
-	      routeData={routeData}
+	      routeData={routeData.routes}
+	      routeSequenceData={routeData.routeSequences}
             />
             <Legend />
           </div>
