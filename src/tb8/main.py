@@ -201,6 +201,26 @@ def read_route_by_modes(request: Request, query: str = "tube"):
             context=MetaData(request_time=received, query=query), results=results
         )
 
+@app.get("/route-sequence-by-line-direction")
+def read_route_sequence_by_line_direction(request: Request, line: str, direction: str):
+    print(f"Received {line=} {direction=}")
+    query = f"line={line},direction={direction}"
+    received = time_now()
+    try:
+        err_msg = f"Received unknown line: {line!r}. Choose from: {arrivable_line_names}"
+        assert line in arrivable_line_names, err_msg
+        result = tube.fetch.line.route_sequence_by_id_direction(
+            id=line, direction=direction
+        ).model_dump()
+    except Exception as exc:
+        return Error(
+            context=MetaData(request_time=received, query=query), error=str(exc)
+        )
+    else:
+        return Response(
+            context=MetaData(request_time=received, query=query), results=[result]
+        )
+
 
 @app.get("/arrivals-by-lines")
 def read_arrivals_by_lines(request: Request, query: str = ",".join(arrivable_line_names)):
