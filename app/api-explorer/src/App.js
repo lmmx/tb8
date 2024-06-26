@@ -22,9 +22,11 @@ export default function App() {
   const [error, setError] = useState(null);
   const [setupIsLoading, setSetupIsLoading] = useState(true);
   const [loadingSteps, setLoadingSteps] = useState({
+    serverAwake: 'pending',
     centroids: 'pending',
     disruptions: 'pending',
-    routeData: 'pending'
+    routeData: 'pending',
+    // processing: 'pending'
   });
   const [loading, setLoading] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
@@ -35,13 +37,21 @@ export default function App() {
     const initializeData = async () => {
       setSetupIsLoading(true);
       try {
+        let isServerAwake = false;
         const updateStep = (step, status) => {
           setLoadingSteps(prev => ({ ...prev, [step]: status }));
+        };
+
+        const checkServerAwake = async () => {
+          updateStep('serverAwake', 'loading');
+          await fetch('https://tb8.onrender.com/');
+          updateStep('serverAwake', 'complete');
         };
 
         const fetchCentroidsWrapper = async () => {
           updateStep('centroids', 'loading');
           const result = await fetchCentroids();
+          updateStep('serverAwake', 'complete');
           updateStep('centroids', 'complete');
           return result;
         };
@@ -49,6 +59,7 @@ export default function App() {
         const fetchDisruptionsWrapper = async () => {
           updateStep('disruptions', 'loading');
           const result = await fetchTubeDisruptions();
+          updateStep('serverAwake', 'complete');
           updateStep('disruptions', 'complete');
           return result;
         };
@@ -56,17 +67,19 @@ export default function App() {
         const fetchRouteDataWrapper = async () => {
           updateStep('routeData', 'loading');
           const result = await fetchRouteData();
+          updateStep('serverAwake', 'complete');
           updateStep('routeData', 'complete');
           return result;
         };
 
         const [centroids, disruptions, { routeData, routeSequenceData }] = await Promise.all([
+          checkServerAwake(),
           fetchCentroidsWrapper(),
           fetchDisruptionsWrapper(),
           fetchRouteDataWrapper(),
-        ]);
+        ]).then(([, centroids, disruptions, routeData]) => [centroids, disruptions, routeData]);
 
-        updateStep('processing', 'loading');
+        // updateStep('processing', 'loading');
         const stations = Object.values(centroids).map(station => ({
           value: station.id,
           label: station.name
@@ -76,7 +89,7 @@ export default function App() {
         setAllCentroids(centroids);
         setTubeDisruptions(disruptions);
         setRouteData({ routes: routeData, routeSequences: routeSequenceData });
-        updateStep('processing', 'complete');
+        // updateStep('processing', 'complete');
       } catch (err) {
         setError("Failed to initialize data: " + err.message);
         setLoadingSteps(prev => Object.fromEntries(Object.keys(prev).map(key => [key, 'error'])));
