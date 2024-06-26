@@ -1,10 +1,29 @@
-import React, { useMemo } from 'react';
-import { Polyline } from 'react-leaflet';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Polyline, useMap } from 'react-leaflet';
 import { getLineColor } from './LineRoundels';
 
-const OFFSET_FACTOR = 0.0001; // As previously defined
+const OFFSET_FACTOR = 0.0002;
+const MIN_ZOOM = 10;
+const MAX_ZOOM = 18;
+const MIN_WIDTH = 1;
+const MAX_WIDTH = 12;
 
 const RoutePolylines = ({ routeSequenceData }) => {
+  const map = useMap();
+  const [zoom, setZoom] = useState(map.getZoom());
+
+  useEffect(() => {
+    const handleZoomEnd = () => {
+      setZoom(map.getZoom());
+    };
+
+    map.on('zoomend', handleZoomEnd);
+
+    return () => {
+      map.off('zoomend', handleZoomEnd);
+    };
+  }, [map]);
+
   const lineSegments = useMemo(() => {
     const segmentMap = new Map();
     const stationLineCount = new Map();
@@ -77,14 +96,24 @@ const RoutePolylines = ({ routeSequenceData }) => {
     return Array.from(offsetSegments.entries());
   }, [routeSequenceData]);
 
+  const getLineWidth = (zoom) => {
+    const normalizedZoom = Math.max(0, Math.min(1, (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)));
+    const width = MIN_WIDTH + (MAX_WIDTH - MIN_WIDTH) * Math.pow(normalizedZoom, 1.5);
+    const roundedWidth = Math.round(width * 10) / 10; // Round to 1 decimal place
+    console.log(`zoomed to ${zoom}, normed: ${normalizedZoom.toFixed(6)}, width: ${roundedWidth}`);
+    return roundedWidth;
+  };
+
+  const currentLineWidth = getLineWidth(zoom);
+
   return (
     <>
       {lineSegments.map(([lineId, coordinates]) => (
         <Polyline
-          key={lineId}
+          key={`${lineId}-${zoom}`}
           positions={coordinates}
           color={getLineColor(lineId)}
-          weight={10}
+          weight={currentLineWidth}
           opacity={0.8}
         />
       ))}
