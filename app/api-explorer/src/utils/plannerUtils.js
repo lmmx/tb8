@@ -31,9 +31,9 @@ export const getRelevantArrivals = (allOriginArrivals, commonLines) => {
 };
 
 export const getRouteDirection = (origin, destination, lineId, routeSequenceData) => {
-  console.log(`Getting route direction for ${origin.id} to ${destination.id} on line ${lineId}`);
-  console.log('Examining routes:', routeSequenceData);
-  console.log('For example', routeSequenceData[0].OrderedLineRoutes);
+  // console.log(`Getting route direction for ${origin.id} to ${destination.id} on line ${lineId}`);
+  // console.log('Examining routes:', routeSequenceData);
+  // console.log('For example', routeSequenceData[0].OrderedLineRoutes);
   const relevantRoutes = routeSequenceData.filter(route => 
     route.LineId === lineId &&
     route.OrderedLineRoutes.some(lineRoute => 
@@ -41,7 +41,7 @@ export const getRouteDirection = (origin, destination, lineId, routeSequenceData
       lineRoute.NaptanIds.includes(destination.id)
     )
   );
-  console.log('Relevant routes:', relevantRoutes);
+  // console.log('Relevant routes:', relevantRoutes);
 
   for (const route of relevantRoutes) {
     const lineRoute = route.OrderedLineRoutes.find(lr => 
@@ -52,16 +52,16 @@ export const getRouteDirection = (origin, destination, lineId, routeSequenceData
       const destinationIndex = lineRoute.NaptanIds.indexOf(destination.id);
       const direction = originIndex < destinationIndex ? route.Direction : 
         (route.Direction === 'inbound' ? 'outbound' : 'inbound');
-      console.log(`Found direction: ${direction}`);
+      // console.log(`Found direction: ${direction}`);
       return direction;
     }
   }
-  console.log('No direction found');
+  // console.log('No direction found');
   return null;
 };
 
 export const createJourneyOptions = (relevantArrivals, origin, destination, routeSequenceData) => {
-  console.log('All arrivals', relevantArrivals);
+  // console.log('All arrivals', relevantArrivals);
   const options = relevantArrivals.flatMap(arrival => {
     const directions = origin.componentStations.flatMap(originStation => 
       destination.componentStations.map(destinationStation => 
@@ -74,7 +74,9 @@ export const createJourneyOptions = (relevantArrivals, origin, destination, rout
       )
     ).filter(Boolean);
 
-    return directions.map(direction => ({
+    // console.log('Direction(s) for arrivals towards destination:', directions);
+
+    const arrivals_in_right_direction = directions.map(direction => ({
       origin: origin.name,
       destination: destination.name,
       lineId: arrival.LineId,
@@ -87,29 +89,26 @@ export const createJourneyOptions = (relevantArrivals, origin, destination, rout
       destinationNaptanId: arrival.DestinationNaptanId,
       frequency: null
     }));
+    // console.log('Arrival(s) in right direction:', arrivals_in_right_direction);
+    return arrivals_in_right_direction;
   });
 
   console.log('from::', origin);
   console.log('to::', destination);
   console.log('arrivals::', options);
-  // Filter options to include only those going in the correct direction
-  const filteredOptions = options.filter(option => 
-    option.direction && option.destinationNaptanId === destination.id
-  );
-	console.log('filtered options', filteredOptions);
 
-  filteredOptions.sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+  options.sort((a, b) => a.departureTime.localeCompare(b.departureTime));
 
-  if (filteredOptions.length > 1) {
-    const timeDiffs = filteredOptions.slice(1).map((option, index) => 
-      new Date(option.departureTime) - new Date(filteredOptions[index].departureTime)
+  if (options.length > 1) {
+    const timeDiffs = options.slice(1).map((option, index) => 
+      new Date(option.departureTime) - new Date(options[index].departureTime)
     );
     const avgTimeDiff = timeDiffs.reduce((a, b) => a + b, 0) / timeDiffs.length;
     const frequency = Math.round(avgTimeDiff / 60000);
-    filteredOptions.forEach(option => option.frequency = frequency);
+    options.forEach(option => option.frequency = frequency);
   }
 
-  return filteredOptions;
+  return options;
 };
 
 export const createJourney = async (selectedStations, allCentroids, routeData) => {

@@ -22,7 +22,6 @@ export const fetchJourneyData = async (stationIds) => {
   const stationMap = data.results.reduce((acc, point) => {
     if (typeof point.Lat === 'number' && typeof point.Lon === 'number' && !isNaN(point.Lat) && !isNaN(point.Lon)) {
       if (!acc[point.StationName]) {
-	console.log('5');
         acc[point.StationName] = {
           name: point.StationName,
           points: []
