@@ -1,5 +1,6 @@
 import React from 'react';
-import { Clock, Train, MapPin, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Clock, MapPin, ArrowRight, AlertTriangle } from 'lucide-react';
+import { renderLineRoundels, getLineColor } from './LineRoundels';
 
 const JourneyOptions = ({ selectedStations, planJourney, journeyOptions }) => {
   return (
@@ -34,12 +35,14 @@ const JourneyOptions = ({ selectedStations, planJourney, journeyOptions }) => {
                 <span className="font-medium text-gray-700">{option.destination}</span>
               </div>
               <div className="flex items-center space-x-2 mb-2">
-                <Train className="w-5 h-5 text-purple-500" />
-                <span className="text-gray-600">{option.lineName} line</span>
+                {renderLineRoundels([{ Line: option.lineId }])}
+                <span className="text-gray-600" style={{ color: getLineColor(option.lineId) }}>
+                  {option.lineName} line
+                </span>
               </div>
-              <div className="grid grid-cols-1 gap-2 text-sm text-gray-600">
-                <div>{option.platform}</div>
-                <div>to {option.towards}</div>
+              <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                <div>Platform: {option.platform}</div>
+                <div>Towards: {option.towards}</div>
                 {option.frequency && (
                   <div className="col-span-2 flex items-center space-x-1">
                     <AlertTriangle className="w-4 h-4 text-yellow-500" />
