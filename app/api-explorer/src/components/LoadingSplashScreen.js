@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrainFront } from 'lucide-react';
+import { TrainFront, Moon, Sunrise, Map, AlertTriangle } from 'lucide-react';
 
 const LoadingSplashScreen = () => {
   const [status, setStatus] = useState('waiting');
@@ -38,6 +38,21 @@ const LoadingSplashScreen = () => {
     }
   };
 
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'waiting':
+        return <Moon className="w-5 h-5 inline-block mr-2" />;
+      case 'awake':
+        return <Sunrise className="w-5 h-5 inline-block mr-2" />;
+      case 'ready':
+        return <Map className="w-5 h-5 inline-block mr-2" />;
+      case 'error':
+        return <AlertTriangle className="w-5 h-5 inline-block mr-2" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-tr from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 animate-gradient-x"></div>
@@ -52,7 +67,8 @@ const LoadingSplashScreen = () => {
         <p className="text-xl text-white mb-2">
           It's time for the tubeulator...
         </p>
-        <p className="text-sm text-white">
+        <p className="text-sm text-white flex items-center justify-center">
+          {getStatusIcon()}
           {message}
         </p>
       </div>
