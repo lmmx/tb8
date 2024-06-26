@@ -21,9 +21,9 @@ export const getLineColor = (line) => {
   return lineColors[line.toLowerCase()] || '#6f6f6f'; // Default to grey for unknown lines
 };
 
-const createRoundel = (color) => {
+const createRoundel = (color, size = 30) => {
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" viewBox="0 0 480 390">
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 480 390">
       <title>Tube Roundel</title>
       <g stroke="${color}" fill="none">
         <path d="M 0,195 H 480" stroke-width="75" />
@@ -33,14 +33,13 @@ const createRoundel = (color) => {
   `;
 };
 
-// Function to render line roundels
-export const renderLineRoundels = (platforms) => {
+export const renderLineRoundels = (platforms, size = 30) => {
   if (!platforms || platforms.length === 0) return null;
   const lines = [...new Set(platforms.map(platform => platform.Line))];
   return (
-    <div className="flex flex-wrap gap-1 mt-2">
+    <div className="flex flex-wrap gap-1">
       {lines.map(line => (
-        <div key={line} dangerouslySetInnerHTML={{ __html: createRoundel(getLineColor(line)) }} />
+        <div key={line} dangerouslySetInnerHTML={{ __html: createRoundel(getLineColor(line), size) }} />
       ))}
     </div>
   );

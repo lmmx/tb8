@@ -35,8 +35,8 @@ const JourneyOptions = ({ selectedStations, planJourney, journeyOptions }) => {
                 <span className="font-medium text-gray-700">{option.destination}</span>
               </div>
               <div className="flex items-center space-x-2 mb-2">
-                {renderLineRoundels([{ Line: option.lineId }])}
-                <span className="text-gray-600" style={{ color: getLineColor(option.lineId) }}>
+                {renderLineRoundels([{ Line: option.lineId }], 24)}
+                <span className="text-gray-600 font-semibold" style={{ color: getLineColor(option.lineId) }}>
                   {option.lineName} line
                 </span>
               </div>
