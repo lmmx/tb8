@@ -52,7 +52,7 @@ export const getRouteDirection = (origin, destination, lineId, routeSequenceData
       const destinationIndex = lineRoute.NaptanIds.indexOf(destination.id);
       const direction = originIndex < destinationIndex ? route.Direction : 
         (route.Direction === 'inbound' ? 'outbound' : 'inbound');
-      // console.log(`Found direction: ${direction}`);
+      console.log(`Found direction: ${direction}`);
       return direction;
     }
   }
@@ -61,43 +61,43 @@ export const getRouteDirection = (origin, destination, lineId, routeSequenceData
 };
 
 export const createJourneyOptions = (relevantArrivals, origin, destination, routeSequenceData) => {
-  // console.log('All arrivals', relevantArrivals);
+  console.log('All arrivals', relevantArrivals);
   const options = relevantArrivals.flatMap(arrival => {
-    const directions = origin.componentStations.flatMap(originStation => 
-      destination.componentStations.map(destinationStation => 
-        getRouteDirection(
+    const correctDirections = origin.componentStations.flatMap(originStation =>
+      destination.componentStations.map(destinationStation => {
+        const direction = getRouteDirection(
           { id: originStation },
           { id: destinationStation },
           arrival.LineId,
           routeSequenceData
-        )
-      )
+        );
+        return direction === arrival.Direction ? direction : null;
+      })
     ).filter(Boolean);
 
-    // console.log('Direction(s) for arrivals towards destination:', directions);
+    console.log('Correct direction(s) for arrival:', correctDirections);
 
-    const arrivals_in_right_direction = directions.map(direction => ({
-      origin: origin.name,
-      destination: destination.name,
-      lineId: arrival.LineId,
-      lineName: arrival.LineName,
-      departureTime: arrival.ExpectedArrival,
-      arrivalTime: null,
-      platform: arrival.PlatformName,
-      towards: arrival.Towards,
-      direction: direction,
-      destinationNaptanId: arrival.DestinationNaptanId,
-      frequency: null
-    }));
-    // console.log('Arrival(s) in right direction:', arrivals_in_right_direction);
-    return arrivals_in_right_direction;
+    if (correctDirections.length > 0) {
+      return [{
+        origin: origin.name,
+        destination: destination.name,
+        lineId: arrival.LineId,
+        lineName: arrival.LineName,
+        departureTime: arrival.ExpectedArrival,
+        arrivalTime: null,
+        platform: arrival.PlatformName,
+        towards: arrival.Towards,
+        direction: correctDirections[0],
+        destinationNaptanId: arrival.DestinationNaptanId,
+        frequency: null
+      }];
+    }
+    return []; // Return an empty array if no correct direction is found
   });
 
-  console.log('from::', origin);
-  console.log('to::', destination);
-  console.log('arrivals::', options);
+  console.log('Filtered journey options:', options);
 
-  options.sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+  options.sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
 
   if (options.length > 1) {
     const timeDiffs = options.slice(1).map((option, index) => 
