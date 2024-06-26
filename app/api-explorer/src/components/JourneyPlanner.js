@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import JourneyOptions from './JourneyOptions';
 import { 
   fetchArrivals, 
@@ -6,11 +6,21 @@ import {
   getRelevantArrivals, 
   createJourneyOptions, 
   createJourney,
-  getRouteDirection
+  getRouteDirection,
+  buildNetworkGraph
 } from '../utils/plannerUtils';
 
 const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading, setError, routes, routeSequences }) => {
   const [journeyOptions, setJourneyOptions] = useState([]);
+  const [networkGraph, setNetworkGraph] = useState(null);
+
+  useEffect(() => {
+    // Build the network graph when component mounts or when routes/routeSequences change
+    if (routes && routeSequences) {
+      const graph = buildNetworkGraph(Object.values(allCentroids), routeSequences);
+      setNetworkGraph(graph);
+    }
+  }, [routes, routeSequences, allCentroids]);
 
   const findCentroidByStationId = (stationId) => {
     return Object.values(allCentroids).find(centroid => centroid.id === stationId);
@@ -29,6 +39,17 @@ const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading
         return;
       }
 
+      if (!networkGraph) {
+        setError("Network graph is not ready. Please try again.");
+        return;
+      }
+
+      // Here you would implement the logic to find the path using the networkGraph
+      // For now, we'll just log the graph for the selected stations
+      console.log("Network graph for origin:", networkGraph[origin.id]);
+      console.log("Network graph for destination:", networkGraph[destination.id]);
+
+
       // console.log('from', origin, 'to', destination);
       const [allOriginArrivals, allDestinationArrivals] = await Promise.all([
         fetchArrivals(origin.componentStations),
@@ -38,8 +59,9 @@ const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading
       const commonLines = getCommonLines(allOriginArrivals, allDestinationArrivals);
 
       if (commonLines.length === 0) {
+        console.log("No direct line found. Multi-line journey planning needed.");
         console.log("Couldn't resolve from:", allOriginArrivals, "to:", allDestinationArrivals);
-        setError("No direct line found between the selected stations.");
+        setError("No direct line found between the selected stations. Multi-line journeys are not yet implemented.");
         return;
       }
 

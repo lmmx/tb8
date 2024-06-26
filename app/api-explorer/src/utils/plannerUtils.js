@@ -30,6 +30,38 @@ export const getRelevantArrivals = (allOriginArrivals, commonLines) => {
   );
 };
 
+export const buildNetworkGraph = (stations, routeSequenceData) => {
+  const graph = {};
+  
+  // Initialize the graph with all component stations
+  stations.forEach(station => {
+    if (station.centroid && station.centroid.componentStations) {
+      station.centroid.componentStations.forEach(componentId => {
+        graph[componentId] = {};
+      });
+    }
+  });
+
+  // Build connections based on routeSequenceData
+  routeSequenceData.forEach(route => {
+    route.OrderedLineRoutes.forEach(lineRoute => {
+      for (let i = 0; i < lineRoute.NaptanIds.length - 1; i++) {
+        const currentStation = lineRoute.NaptanIds[i];
+        const nextStation = lineRoute.NaptanIds[i + 1];
+        
+        // Add bidirectional connections
+        if (!graph[currentStation]) graph[currentStation] = {};
+        if (!graph[nextStation]) graph[nextStation] = {};
+        
+        graph[currentStation][nextStation] = route.LineId;
+        graph[nextStation][currentStation] = route.LineId;
+      }
+    });
+  });
+
+  return graph;
+};
+
 export const getRouteDirection = (origin, destination, lineId, routeSequenceData) => {
   // console.log(`Getting route direction for ${origin.id} to ${destination.id} on line ${lineId}`);
   // console.log('Examining routes:', routeSequenceData);
