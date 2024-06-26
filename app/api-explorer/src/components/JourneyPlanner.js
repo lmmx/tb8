@@ -29,6 +29,7 @@ const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading
         return;
       }
 
+      // console.log('from', origin, 'to', destination);
       const [allOriginArrivals, allDestinationArrivals] = await Promise.all([
         fetchArrivals(origin.componentStations),
         fetchArrivals(destination.componentStations)
@@ -37,6 +38,7 @@ const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading
       const commonLines = getCommonLines(allOriginArrivals, allDestinationArrivals);
 
       if (commonLines.length === 0) {
+        console.log("Couldn't resolve from:", allOriginArrivals, "to:", allDestinationArrivals);
         setError("No direct line found between the selected stations.");
         return;
       }
