@@ -1,12 +1,18 @@
+
 import React, { useMemo } from 'react';
 import { Polyline } from 'react-leaflet';
 import { getLineColor } from './LineRoundels';
 
-const RoutePolylines = ({ routeSequenceData }) => {
-  const uniqueSegments = useMemo(() => {
-    const segmentMap = new Map();
+const OFFSET_FACTOR = 0.0004; // As requested
 
-    routeSequenceData.forEach((route) => {
+const RoutePolylines = ({ routeSequenceData }) => {
+  const lineSegments = useMemo(() => {
+    const segmentMap = new Map();
+    const lineIndices = new Map();
+
+    routeSequenceData.forEach((route, index) => {
+      lineIndices.set(route.LineId, index);
+      
       route.LineStrings.forEach((lineString) => {
         const coordinates = JSON.parse(lineString)[0].map(coord => [coord[1], coord[0]]);
         
@@ -14,31 +20,53 @@ const RoutePolylines = ({ routeSequenceData }) => {
           const segment = [coordinates[i], coordinates[i + 1]].sort((a, b) => {
             return a[0] === b[0] ? a[1] - b[1] : a[0] - b[0];
           });
-          const key = `${route.LineId}-${segment[0].join(',')}-${segment[1].join(',')}`;
+          const baseKey = `${segment[0].join(',')}-${segment[1].join(',')}`;
           
-          if (!segmentMap.has(key)) {
-            segmentMap.set(key, {
+          if (!segmentMap.has(baseKey)) {
+            segmentMap.set(baseKey, []);
+          }
+          
+          const existingSegment = segmentMap.get(baseKey).find(s => s.lineId === route.LineId);
+          if (!existingSegment) {
+            segmentMap.get(baseKey).push({
               coordinates: segment,
               lineId: route.LineId,
-              direction: route.Direction
+              direction: route.Direction,
+              index: lineIndices.get(route.LineId)
             });
           }
         }
       });
     });
 
-    return Array.from(segmentMap.values());
+    const offsetSegments = new Map();
+    segmentMap.forEach((segments) => {
+      segments.forEach((segment, idx) => {
+        const offset = idx * OFFSET_FACTOR;
+        const offsetCoordinates = segment.coordinates.map(coord => [
+          coord[0] + offset,
+          coord[1]
+        ]);
+        
+        if (!offsetSegments.has(segment.lineId)) {
+          offsetSegments.set(segment.lineId, []);
+        }
+        offsetSegments.get(segment.lineId).push(offsetCoordinates);
+      });
+    });
+
+    return Array.from(offsetSegments.entries());
   }, [routeSequenceData]);
 
   return (
     <>
-      {uniqueSegments.map((segment, index) => (
+      {lineSegments.map(([lineId, coordinates]) => (
         <Polyline
-          key={`${segment.lineId}-${segment.direction}-${index}`}
-          positions={segment.coordinates}
-          color={getLineColor(segment.lineId)}
+          key={lineId}
+          positions={coordinates}
+          color={getLineColor(lineId)}
           weight={10}
-          opacity={0.5}
+          opacity={0.8}
         />
       ))}
     </>
