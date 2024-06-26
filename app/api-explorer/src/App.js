@@ -164,8 +164,8 @@ export default function App() {
                 setJourney={setJourney}
                 setLoading={setLoading}
                 setError={setError}
-                routeData={routeData.routes}
-                routeSequenceData={routeData.routeSequences}
+                routes={routeData.routes}
+                routeSequences={routeData.routeSequences}
               />
             </div>
             <JourneySummary 

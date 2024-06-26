@@ -100,7 +100,7 @@ const RoutePolylines = ({ routeSequenceData }) => {
     const normalizedZoom = Math.max(0, Math.min(1, (zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)));
     const width = MIN_WIDTH + (MAX_WIDTH - MIN_WIDTH) * Math.pow(normalizedZoom, 1.5);
     const roundedWidth = Math.round(width * 10) / 10; // Round to 1 decimal place
-    console.log(`zoomed to ${zoom}, normed: ${normalizedZoom.toFixed(6)}, width: ${roundedWidth}`);
+    // console.log(`zoomed to ${zoom}, normed: ${normalizedZoom.toFixed(6)}, width: ${roundedWidth}`);
     return roundedWidth;
   };
 

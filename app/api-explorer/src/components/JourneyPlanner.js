@@ -9,7 +9,7 @@ import {
   getRouteDirection
 } from '../utils/plannerUtils';
 
-const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading, setError, routeData }) => {
+const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading, setError, routes, routeSequences }) => {
   const [journeyOptions, setJourneyOptions] = useState([]);
 
   const findCentroidByStationId = (stationId) => {
@@ -50,10 +50,10 @@ const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading
         return;
       }
 
-      const options = createJourneyOptions(relevantArrivals, origin, destination, routeData);
+      const options = createJourneyOptions(relevantArrivals, origin, destination, routeSequences);
       setJourneyOptions(options);
 
-      const newJourney = await createJourney(selectedStations, allCentroids, routeData);
+      const newJourney = await createJourney(selectedStations, allCentroids, routes);
       setJourney(newJourney);
     } catch (err) {
       setError("Failed to plan journey: " + err.message);
