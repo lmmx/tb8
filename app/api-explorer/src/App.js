@@ -12,6 +12,7 @@ import JourneySummary from './components/JourneySummary';
 import TubeDisruptions from './components/TubeDisruptions';
 import Legend from './components/Legend';
 import Footer from './components/Footer';
+import { Map, Train, Waypoints } from 'lucide-react';
 
 export default function App() {
   const [stationOptions, setStationOptions] = useState([]);
@@ -58,50 +59,60 @@ export default function App() {
   };
 
   if (setupIsLoading) {
-    console.log("Loading animation goes here"); // return <div>Loading...</div>;
-    return <LoadingSplashScreen />
+    return <LoadingSplashScreen />;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 p-6">
       <div className="container mx-auto max-w-6xl bg-white rounded-lg shadow-lg p-6">
-        <h1 className="text-4xl font-bold mb-6 text-center text-gray-800 border-b-2 border-gray-200 pb-4">
+        <h1 className="text-4xl font-bold mb-6 text-center text-gray-800 border-b-2 border-gray-200 pb-4 flex items-center justify-center">
+          <Waypoints className="w-10 h-10 mr-2 text-blue-500" />
           Tubeulator
+          <Waypoints className="w-10 h-10 ml-2 text-blue-500" />
         </h1>
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-2/3">
-            <div className="bg-gray-100 rounded-lg overflow-hidden shadow-md" style={{ height: '600px' }}>
+            <div className="bg-gray-100 rounded-lg overflow-hidden shadow-md relative" style={{ height: '600px' }}>
               <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ height: '100%', width: '100%' }}>
                 <MapContent
-	          journey={journey}
-	          allCentroids={allCentroids}
-	          routeSequenceData={routeData.routeSequences}
-	        />
+                  journey={journey}
+                  allCentroids={allCentroids}
+                  routeSequenceData={routeData.routeSequences}
+                />
               </MapContainer>
+              <div className="absolute top-2 left-2 bg-white p-2 rounded-full shadow-md">
+                <Map className="w-6 h-6 text-blue-500" />
+              </div>
             </div>
           </div>
-          <div className="w-full md:w-1/3">
-            <StationSelector 
-              stationOptions={stationOptions}
-              selectedStations={selectedStations}
-              setSelectedStations={setSelectedStations}
-              loading={loading}
-              error={error}
-            />
+          <div className="w-full md:w-1/3 space-y-4">
+            <div className="bg-gray-100 p-4 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-2 flex items-center">
+                <Train className="w-6 h-6 mr-2 text-blue-500" />
+                Plan Your Journey
+              </h2>
+              <StationSelector 
+                stationOptions={stationOptions}
+                selectedStations={selectedStations}
+                setSelectedStations={setSelectedStations}
+                loading={loading}
+                error={error}
+              />
+              <JourneyPlanner 
+                selectedStations={selectedStations}
+                allCentroids={allCentroids}
+                setJourney={setJourney}
+                setLoading={setLoading}
+                setError={setError}
+                routeData={routeData.routes}
+                routeSequenceData={routeData.routeSequences}
+              />
+            </div>
             <JourneySummary 
               journey={journey}
               debugMode={debugMode}
             />
             <TubeDisruptions disruptions={tubeDisruptions} />
-            <JourneyPlanner 
-              selectedStations={selectedStations}
-              allCentroids={allCentroids}
-              setJourney={setJourney}
-              setLoading={setLoading}
-              setError={setError}
-	      routeData={routeData.routes}
-	      routeSequenceData={routeData.routeSequences}
-            />
             <Legend />
           </div>
         </div>
