@@ -16,17 +16,9 @@ const JourneyOptions = ({ selectedStations, planJourney, journeyOptions }) => {
       {journeyOptions.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-800">Journey Options</h2>
+          <div className="h-96 overflow-y-auto space-y-4">
           {journeyOptions.map((option, index) => (
             <div key={index} className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition duration-300 ease-in-out">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-500">Option {index + 1}</span>
-                <div className="flex items-center space-x-1">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">
-                    {new Date(option.departureTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                  </span>
-                </div>
-              </div>
               <div className="flex items-center space-x-2 mb-2">
                 <MapPin className="w-5 h-5 text-blue-500" />
                 <span className="font-medium text-gray-700">{option.origin}</span>
@@ -34,15 +26,23 @@ const JourneyOptions = ({ selectedStations, planJourney, journeyOptions }) => {
                 <MapPin className="w-5 h-5 text-green-500" />
                 <span className="font-medium text-gray-700">{option.destination}</span>
               </div>
-              <div className="flex items-center space-x-2 mb-2">
-                {renderLineRoundels([{ Line: option.lineId }], 24)}
-                <span className="text-gray-600 font-semibold" style={{ color: getLineColor(option.lineId) }}>
-                  {option.lineName} line
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                <div>Platform: {option.platform}</div>
-                <div>Towards: {option.towards}</div>
+		<div className="flex items-center justify-between space-x-2 mb-2">
+		  <div className="flex items-center space-x-2">
+		    {renderLineRoundels([{ Line: option.lineId }], 24)}
+		    <span className="text-gray-600 font-semibold" style={{ color: getLineColor(option.lineId) }}>
+		      {option.lineName} line
+		    </span>
+		  </div>
+		  <div className="flex items-center space-x-1">
+		    <Clock className="w-4 h-4 text-gray-400" />
+		    <span className="text-sm text-gray-600">
+		      {new Date(option.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+		    </span>
+		  </div>
+		</div>
+              <div className="grid grid-cols-1 gap-2 text-sm text-gray-600">
+                <div>{option.platform}</div>
+                <div>to <span className="font-semibold">{option.towards}</span></div>
                 {option.frequency && (
                   <div className="col-span-2 flex items-center space-x-1">
                     <AlertTriangle className="w-4 h-4 text-yellow-500" />
@@ -52,6 +52,7 @@ const JourneyOptions = ({ selectedStations, planJourney, journeyOptions }) => {
               </div>
             </div>
           ))}
+          </div>
         </div>
       )}
     </div>
