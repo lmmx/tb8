@@ -66,7 +66,7 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 p-6">
       <div className="container mx-auto max-w-6xl bg-white rounded-lg shadow-lg p-6">
         <h1 className="text-4xl font-bold mb-6 text-center text-gray-800 border-b-2 border-gray-200 pb-4">
-          London Transport Journey Planner
+          Tubeulator
         </h1>
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-2/3">
