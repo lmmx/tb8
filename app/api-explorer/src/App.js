@@ -21,6 +21,11 @@ export default function App() {
   const [allCentroids, setAllCentroids] = useState(null);
   const [error, setError] = useState(null);
   const [setupIsLoading, setSetupIsLoading] = useState(true);
+  const [loadingSteps, setLoadingSteps] = useState({
+    centroids: 'pending',
+    disruptions: 'pending',
+    routeData: 'pending'
+  });
   const [loading, setLoading] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [tubeDisruptions, setTubeDisruptions] = useState([]);
@@ -30,11 +35,38 @@ export default function App() {
     const initializeData = async () => {
       setSetupIsLoading(true);
       try {
+        const updateStep = (step, status) => {
+          setLoadingSteps(prev => ({ ...prev, [step]: status }));
+        };
+
+        const fetchCentroidsWrapper = async () => {
+          updateStep('centroids', 'loading');
+          const result = await fetchCentroids();
+          updateStep('centroids', 'complete');
+          return result;
+        };
+
+        const fetchDisruptionsWrapper = async () => {
+          updateStep('disruptions', 'loading');
+          const result = await fetchTubeDisruptions();
+          updateStep('disruptions', 'complete');
+          return result;
+        };
+
+        const fetchRouteDataWrapper = async () => {
+          updateStep('routeData', 'loading');
+          const result = await fetchRouteData();
+          updateStep('routeData', 'complete');
+          return result;
+        };
+
         const [centroids, disruptions, { routeData, routeSequenceData }] = await Promise.all([
-          fetchCentroids(),
-          fetchTubeDisruptions(),
-          fetchRouteData(),
+          fetchCentroidsWrapper(),
+          fetchDisruptionsWrapper(),
+          fetchRouteDataWrapper(),
         ]);
+
+        updateStep('processing', 'loading');
         const stations = Object.values(centroids).map(station => ({
           value: station.id,
           label: station.name
@@ -44,8 +76,10 @@ export default function App() {
         setAllCentroids(centroids);
         setTubeDisruptions(disruptions);
         setRouteData({ routes: routeData, routeSequences: routeSequenceData });
+        updateStep('processing', 'complete');
       } catch (err) {
         setError("Failed to initialize data: " + err.message);
+        setLoadingSteps(prev => Object.fromEntries(Object.keys(prev).map(key => [key, 'error'])));
       } finally {
         setSetupIsLoading(false);
       }
@@ -59,7 +93,7 @@ export default function App() {
   };
 
   if (setupIsLoading) {
-    return <LoadingSplashScreen />;
+    return <LoadingSplashScreen loadingSteps={loadingSteps} />;
   }
 
   return (
