@@ -105,6 +105,18 @@ export default function App() {
     setDebugMode(!debugMode);
   };
 
+  const handlePlanJourney = () => {
+    if (selectedStations.length === 2) {
+      // This assumes your JourneyPlanner component has a planJourney method
+      // If it doesn't, you'll need to implement the journey planning logic here
+      // or create a separate function for it
+      const journeyPlannerRef = document.querySelector('button');
+      if (journeyPlannerRef) {
+        journeyPlannerRef.click();
+      }
+    }
+  };
+
   if (setupIsLoading) {
     return <LoadingSplashScreen loadingSteps={loadingSteps} />;
   }
@@ -144,6 +156,7 @@ export default function App() {
                 setSelectedStations={setSelectedStations}
                 loading={loading}
                 error={error}
+                onPlanJourney={handlePlanJourney}
               />
               <JourneyPlanner 
                 selectedStations={selectedStations}

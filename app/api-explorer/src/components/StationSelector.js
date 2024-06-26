@@ -1,9 +1,16 @@
 import React from 'react';
 import Select from 'react-select';
 
-const StationSelector = ({ stationOptions, selectedStations, setSelectedStations, loading, error }) => {
+const StationSelector = ({ stationOptions, selectedStations, setSelectedStations, loading, error, onPlanJourney }) => {
   const handleStationSelect = (selectedOptions) => {
     setSelectedStations(selectedOptions || []);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && selectedStations.length === 2) {
+      event.preventDefault();
+      onPlanJourney();
+    }
   };
 
   return (
@@ -17,6 +24,7 @@ const StationSelector = ({ stationOptions, selectedStations, setSelectedStations
           options={stationOptions}
           value={selectedStations}
           onChange={handleStationSelect}
+          onKeyDown={handleKeyDown}
           placeholder="Type to search for stations..."
           isMulti
           className="text-gray-700"
