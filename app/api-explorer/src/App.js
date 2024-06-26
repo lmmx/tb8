@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from './components/MapContent';
 import { fetchStations, fetchCentroids, fetchTubeDisruptions, fetchRouteData } from './utils/api_functions';
+import LoadingSplashScreen from './components/LoadingSplashScreen';
 import JourneyPlanner from './components/JourneyPlanner';
 import MapContent from './components/MapContent';
 import StationSelector from './components/StationSelector';
@@ -58,6 +59,7 @@ export default function App() {
 
   if (setupIsLoading) {
     console.log("Loading animation goes here"); // return <div>Loading...</div>;
+    return <LoadingSplashScreen />
   }
 
   return (
