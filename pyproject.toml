@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tb8"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Louis Maddox <louismmx@gmail.com>"]
 readme = "README.md"
