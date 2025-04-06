@@ -1,7 +1,7 @@
 import os
-import polars as pl
 from datetime import datetime, timedelta, timezone
 
+import polars as pl
 import tubeulator as tube
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +18,9 @@ app.add_middleware(
 port = int(os.environ.get("PORT", 4000))
 
 lines = tube.load_lines()
-arrivable_line_names = lines.filter(pl.col("Name") != "national-rail")["Name"].unique().sort().to_list()
+arrivable_line_names = (
+    lines.filter(pl.col("Name") != "national-rail")["Name"].unique().sort().to_list()
+)
 lines_by_station = tube.load_lines_by_station()
 stations = tube.load_stations()
 platforms = tube.load_platforms_with_stations_and_services()
@@ -29,20 +31,29 @@ station_centroids = (
             ~pl.col("AreaName").str.starts_with("Bus"),
             pl.col("Level").eq(0),
         ]
-    ).groupby("StationUniqueId").agg(
+    )
+    .groupby("StationUniqueId")
+    .agg(
         [
             pl.col("Lat").mean(),
             pl.col("Lon").mean(),
         ]
     )
 )
-substations = platforms.group_by("StationUniqueId").agg(pl.col("StopAreaNaptanCode").unique().alias("ComponentStations"))
-station_centroids = station_centroids.join(substations, on="StationUniqueId", how="left")
+substations = platforms.group_by("StationUniqueId").agg(
+    pl.col("StopAreaNaptanCode").unique().alias("ComponentStations")
+)
+station_centroids = station_centroids.join(
+    substations, on="StationUniqueId", how="left"
+)
 stations = stations.join(station_centroids, on="StationUniqueId")
 
 modes = {mode.ModeName: mode for mode in tube.fetch.line.meta_modes()}
 undisrupted_modes = "interchange-keep-sitting,interchange-secure,walking".split(",")
 disrupted_modes = [m for m in modes if m not in undisrupted_modes]
+
+bus_lines = [rm.Id for rm in tube.fetch.line.route_by_modes(modes="bus")]
+
 
 def time_now() -> AwareDatetime:
     return datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -201,14 +212,15 @@ def read_route_by_modes(request: Request, query: str = "tube"):
             context=MetaData(request_time=received, query=query), results=results
         )
 
+
 @app.get("/route-sequence-by-line-direction")
 def read_route_sequence_by_line_direction(request: Request, line: str, direction: str):
     print(f"Received {line=} {direction=}")
     query = f"line={line},direction={direction}"
     received = time_now()
     try:
-        err_msg = f"Received unknown line: {line!r}. Choose from: {arrivable_line_names}"
-        assert line in arrivable_line_names, err_msg
+        err_msg = f"Received unknown line: {line!r}. Choose from: {arrivable_line_names} or {bus_lines}"
+        assert line in arrivable_line_names or line in bus_lines, err_msg
         result = tube.fetch.line.route_sequence_by_id_direction(
             id=line, direction=direction
         ).model_dump()
@@ -223,7 +235,9 @@ def read_route_sequence_by_line_direction(request: Request, line: str, direction
 
 
 @app.get("/arrivals-by-lines")
-def read_arrivals_by_lines(request: Request, query: str = ",".join(arrivable_line_names)):
+def read_arrivals_by_lines(
+    request: Request, query: str = ",".join(arrivable_line_names)
+):
     print(f"Received {query=}")
     received = time_now()
     try:
@@ -243,14 +257,18 @@ def read_arrivals_by_lines(request: Request, query: str = ",".join(arrivable_lin
 
 
 @app.get("/arrivals-by-station")
-def read_arrivals_by_station(request: Request, query: str, lines: str = ",".join(arrivable_line_names)):
+def read_arrivals_by_station(
+    request: Request, query: str, lines: str = ",".join(arrivable_line_names)
+):
     print(f"Received {query=}")
     received = time_now()
     try:
         for line_csv in lines.split(","):
             err_msg = f"Received unknown line: {line_csv!r}. Choose from: {arrivable_line_names}"
             assert line_csv in arrivable_line_names, err_msg
-        result_models = tube.fetch.line.arrivals_by_ids_stop(ids=lines, stopPointId=query)
+        result_models = tube.fetch.line.arrivals_by_ids_stop(
+            ids=lines, stopPointId=query
+        )
         results = [rm.model_dump() for rm in result_models]
     except Exception as exc:
         return Error(
