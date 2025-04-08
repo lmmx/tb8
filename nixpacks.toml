@@ -1,2 +1,2 @@
-[phases.setup.environment]
+[phases.build.environment]
 NIXPACKS_POETRY_VERSION = "2.1.2"
