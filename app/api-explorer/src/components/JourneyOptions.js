@@ -12,7 +12,7 @@ const JourneyOptions = ({ selectedStations, planJourney, journeyOptions }) => {
       >
         Plan Journey
       </button>
-      
+
       {journeyOptions.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-800">Journey Options</h2>

@@ -37,7 +37,7 @@ const LoadingSplashScreen = ({ loadingSteps }) => {
   const getTrafficLightColor = () => {
     const completedSteps = Object.values(loadingSteps).filter(status => status === 'complete').length;
     const totalSteps = Object.keys(loadingSteps).length;
-    
+
     if (completedSteps === 0) return 'border-red-500';
     if (completedSteps === totalSteps) return 'border-green-500';
     return 'border-yellow-500';

@@ -29,7 +29,7 @@ function MapContent({ journey, allCentroids, routeSequenceData }) {
         url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>'
       />
-      {journey && journey.stations.flatMap(station => 
+      {journey && journey.stations.flatMap(station =>
         station.points.map(point => {
           const lowestZone = getLowestFareZone(point.fareZones);
           const color = getFareZoneColor(lowestZone);
@@ -53,9 +53,9 @@ function MapContent({ journey, allCentroids, routeSequenceData }) {
         const lowestZone = getLowestFareZone(centroid.fareZones);
         const color = getFareZoneColor(lowestZone);
         return (
-          <Marker 
-            key={`centroid-${centroid.id}`} 
-            position={[centroid.lat, centroid.lon]} 
+          <Marker
+            key={`centroid-${centroid.id}`}
+            position={[centroid.lat, centroid.lon]}
             icon={createCentroidIcon(color)}
           >
             <Popup>
@@ -70,17 +70,17 @@ function MapContent({ journey, allCentroids, routeSequenceData }) {
         );
       })}
       {journey && journey.path && (
-        <Polyline 
-          positions={journey.path} 
-          color="blue" 
-          weight={3} 
-          opacity={0.7} 
+        <Polyline
+          positions={journey.path}
+          color="blue"
+          weight={3}
+          opacity={0.7}
           smoothFactor={1}
         />
       )}
-      
+
       {journey && journey.route && (
-        <Polyline 
+        <Polyline
           positions={journey.route.StopPoints.map(stop => [stop.Lat, stop.Lon])}
           color={getLineColor(journey.route.LineId)}
           weight={4}

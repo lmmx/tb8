@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "tb8"
 version = "0.1.1"
@@ -8,13 +12,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.10,<3.14"
 fastapi = "^0.111.0"
-
 tubeulator = "^0.1.3"
 polars = "^0.20.31"
 patito = "^0.6.1"
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.plugins."console_scripts"]
 "serve" = "tb8.main:serve"

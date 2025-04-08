@@ -5,9 +5,9 @@ export const fetchStations = async () => {
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
 	console.log(data.results);
-  return data.results.map(station => ({ 
-    value: station.StationUniqueId, 
-    label: station.StationName 
+  return data.results.map(station => ({
+    value: station.StationUniqueId,
+    label: station.StationName
   }));
 };
 
@@ -17,7 +17,7 @@ export const fetchJourneyData = async (stationIds) => {
   const response = await fetch(`${API_BASE_URL}/station-points?query=${encodeURIComponent(query)}`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
-  
+
   // Group points by station name
   const stationMap = data.results.reduce((acc, point) => {
     if (typeof point.Lat === 'number' && typeof point.Lon === 'number' && !isNaN(point.Lat) && !isNaN(point.Lon)) {
@@ -49,10 +49,10 @@ export const fetchCentroids = async () => {
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
   const platformData = await fetchPlatformData();
-  return data.results.filter(centroid => 
-    typeof centroid.Lat === 'number' && 
+  return data.results.filter(centroid =>
+    typeof centroid.Lat === 'number' &&
     typeof centroid.Lon === 'number' &&
-    !isNaN(centroid.Lat) && 
+    !isNaN(centroid.Lat) &&
     !isNaN(centroid.Lon)
   ).reduce((acc, centroid) => {
     acc[centroid.StationName] = {
@@ -105,8 +105,8 @@ export const fetchRouteData = async () => {
     const routeResponse = await fetch(`${API_BASE_URL}/route-by-modes?query=tube`);
     const routeData = await routeResponse.json();
 	  console.log('fetched route data', routeData);
-    const routeSequencePromises = routeData.results.flatMap(route => 
-      ['inbound', 'outbound'].map(direction => 
+    const routeSequencePromises = routeData.results.flatMap(route =>
+      ['inbound', 'outbound'].map(direction =>
         fetch(`${API_BASE_URL}/route-sequence-by-line-direction?line=${route.Id}&direction=${direction}`)
           .then(res => res.json())
       )
