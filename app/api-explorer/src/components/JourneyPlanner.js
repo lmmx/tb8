@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import JourneyOptions from './JourneyOptions';
-import { 
-  fetchArrivals, 
-  getCommonLines, 
-  getRelevantArrivals, 
-  createJourneyOptions, 
+import {
+  fetchArrivals,
+  getCommonLines,
+  getRelevantArrivals,
+  createJourneyOptions,
   createJourney,
   getRouteDirection,
   buildNetworkGraph
@@ -85,7 +85,7 @@ const JourneyPlanner = ({ selectedStations, allCentroids, setJourney, setLoading
   };
 
   return (
-    <JourneyOptions 
+    <JourneyOptions
       selectedStations={selectedStations}
       planJourney={planJourney}
       journeyOptions={journeyOptions}

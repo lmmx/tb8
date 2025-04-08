@@ -30,7 +30,7 @@ const JourneySummary = ({ journey, debugMode }) => {
         <ul className="list-disc pl-5">
           {journey.stations.map((station, index) => (
             <li key={index}>
-              {station.name} 
+              {station.name}
               {station.centroid.platforms && station.centroid.platforms.length > 0 ? (
                 <span> - {station.centroid.platforms.length} platform(s)</span>
               ) : (
@@ -41,7 +41,7 @@ const JourneySummary = ({ journey, debugMode }) => {
         </ul>
       </div>
       {debugMode && (
-        <button 
+        <button
           onClick={logJourneyData}
           className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >

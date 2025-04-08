@@ -24,7 +24,7 @@ export const getCommonLines = (originArrivals, destinationArrivals) => {
 };
 
 export const getRelevantArrivals = (allOriginArrivals, commonLines) => {
-  return allOriginArrivals.filter(arrival => 
+  return allOriginArrivals.filter(arrival =>
     commonLines.includes(arrival.LineId) &&
     new Date(arrival.ExpectedArrival) <= new Date(Date.now() + 60 * 60 * 1000)
   );
@@ -32,7 +32,7 @@ export const getRelevantArrivals = (allOriginArrivals, commonLines) => {
 
 export const buildNetworkGraph = (stations, routeSequenceData) => {
   const graph = {};
-  
+
   // Initialize the graph with all component stations
   stations.forEach(station => {
     if (station.centroid && station.centroid.componentStations) {
@@ -48,11 +48,11 @@ export const buildNetworkGraph = (stations, routeSequenceData) => {
       for (let i = 0; i < lineRoute.NaptanIds.length - 1; i++) {
         const currentStation = lineRoute.NaptanIds[i];
         const nextStation = lineRoute.NaptanIds[i + 1];
-        
+
         // Add bidirectional connections
         if (!graph[currentStation]) graph[currentStation] = {};
         if (!graph[nextStation]) graph[nextStation] = {};
-        
+
         graph[currentStation][nextStation] = route.LineId;
         graph[nextStation][currentStation] = route.LineId;
       }
@@ -66,23 +66,23 @@ export const getRouteDirection = (origin, destination, lineId, routeSequenceData
   // console.log(`Getting route direction for ${origin.id} to ${destination.id} on line ${lineId}`);
   // console.log('Examining routes:', routeSequenceData);
   // console.log('For example', routeSequenceData[0].OrderedLineRoutes);
-  const relevantRoutes = routeSequenceData.filter(route => 
+  const relevantRoutes = routeSequenceData.filter(route =>
     route.LineId === lineId &&
-    route.OrderedLineRoutes.some(lineRoute => 
-      lineRoute.NaptanIds.includes(origin.id) && 
+    route.OrderedLineRoutes.some(lineRoute =>
+      lineRoute.NaptanIds.includes(origin.id) &&
       lineRoute.NaptanIds.includes(destination.id)
     )
   );
   // console.log('Relevant routes:', relevantRoutes);
 
   for (const route of relevantRoutes) {
-    const lineRoute = route.OrderedLineRoutes.find(lr => 
+    const lineRoute = route.OrderedLineRoutes.find(lr =>
       lr.NaptanIds.includes(origin.id) && lr.NaptanIds.includes(destination.id)
     );
     if (lineRoute) {
       const originIndex = lineRoute.NaptanIds.indexOf(origin.id);
       const destinationIndex = lineRoute.NaptanIds.indexOf(destination.id);
-      const direction = originIndex < destinationIndex ? route.Direction : 
+      const direction = originIndex < destinationIndex ? route.Direction :
         (route.Direction === 'inbound' ? 'outbound' : 'inbound');
       console.log(`Found direction: ${direction}`);
       return direction;
@@ -132,7 +132,7 @@ export const createJourneyOptions = (relevantArrivals, origin, destination, rout
   options.sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
 
   if (options.length > 1) {
-    const timeDiffs = options.slice(1).map((option, index) => 
+    const timeDiffs = options.slice(1).map((option, index) =>
       new Date(option.departureTime) - new Date(options[index].departureTime)
     );
     const avgTimeDiff = timeDiffs.reduce((a, b) => a + b, 0) / timeDiffs.length;
@@ -150,7 +150,7 @@ export const createJourney = async (selectedStations, allCentroids, routeData) =
     ...station,
     centroid: allCentroids[station.name],
   }));
-  const orderedJourneyStations = stationIds.map(id => 
+  const orderedJourneyStations = stationIds.map(id =>
     journeyStations.find(station => station.centroid.id === id)
   );
   const journeyPath = calculateJourneyPath(orderedJourneyStations);
@@ -159,17 +159,17 @@ export const createJourney = async (selectedStations, allCentroids, routeData) =
   const origin = orderedJourneyStations[0];
   const destination = orderedJourneyStations[orderedJourneyStations.length - 1];
   const commonLines = getCommonLines(
-    origin.centroid.platforms, 
+    origin.centroid.platforms,
     destination.centroid.platforms
   );
-  
+
   let route = null;
   if (commonLines.length > 0) {
     const lineId = commonLines[0];
-    route = routeData.find(r => 
-      r.LineId === lineId && 
-      r.RouteSections.some(section => 
-        section.Originator === origin.centroid.id && 
+    route = routeData.find(r =>
+      r.LineId === lineId &&
+      r.RouteSections.some(section =>
+        section.Originator === origin.centroid.id &&
         section.Destination === destination.centroid.id
       )
     );

@@ -150,7 +150,7 @@ export default function App() {
                 <Train className="w-6 h-6 mr-2 text-blue-500" />
                 Plan Your Journey
               </h2>
-              <StationSelector 
+              <StationSelector
                 stationOptions={stationOptions}
                 selectedStations={selectedStations}
                 setSelectedStations={setSelectedStations}
@@ -158,7 +158,7 @@ export default function App() {
                 error={error}
                 onPlanJourney={handlePlanJourney}
               />
-              <JourneyPlanner 
+              <JourneyPlanner
                 selectedStations={selectedStations}
                 allCentroids={allCentroids}
                 setJourney={setJourney}
@@ -168,7 +168,7 @@ export default function App() {
                 routeSequences={routeData.routeSequences}
               />
             </div>
-            <JourneySummary 
+            <JourneySummary
               journey={journey}
               debugMode={debugMode}
             />

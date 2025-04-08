@@ -30,21 +30,23 @@ station_centroids = (
         [
             ~pl.col("AreaName").str.starts_with("Bus"),
             pl.col("Level").eq(0),
-        ]
+        ],
     )
     .groupby("StationUniqueId")
     .agg(
         [
             pl.col("Lat").mean(),
             pl.col("Lon").mean(),
-        ]
+        ],
     )
 )
 substations = platforms.group_by("StationUniqueId").agg(
-    pl.col("StopAreaNaptanCode").unique().alias("ComponentStations")
+    pl.col("StopAreaNaptanCode").unique().alias("ComponentStations"),
 )
 station_centroids = station_centroids.join(
-    substations, on="StationUniqueId", how="left"
+    substations,
+    on="StationUniqueId",
+    how="left",
 )
 stations = stations.join(station_centroids, on="StationUniqueId")
 
@@ -101,11 +103,13 @@ def read_lines(request: Request, query: str = "SELECT * FROM self;"):
         results = lines.sql(query).to_dicts()
     except Exception as exc:
         return Error(
-            context=MetaData(request_time=received, query=query), error=str(exc)
+            context=MetaData(request_time=received, query=query),
+            error=str(exc),
         )
     else:
         return Response(
-            context=MetaData(request_time=received, query=query), results=results
+            context=MetaData(request_time=received, query=query),
+            results=results,
         )
 
 
@@ -117,11 +121,13 @@ def read_lines_by_station(request: Request, query: str = "SELECT * FROM self;"):
         results = lines_by_station.sql(query).to_dicts()
     except Exception as exc:
         return Error(
-            context=MetaData(request_time=received, query=query), error=str(exc)
+            context=MetaData(request_time=received, query=query),
+            error=str(exc),
         )
     else:
         return Response(
-            context=MetaData(request_time=received, query=query), results=results
+            context=MetaData(request_time=received, query=query),
+            results=results,
         )
 
 
@@ -133,11 +139,13 @@ def read_stations(request: Request, query: str = "SELECT * FROM self;"):
         results = stations.sql(query).to_dicts()
     except Exception as exc:
         return Error(
-            context=MetaData(request_time=received, query=query), error=str(exc)
+            context=MetaData(request_time=received, query=query),
+            error=str(exc),
         )
     else:
         return Response(
-            context=MetaData(request_time=received, query=query), results=results
+            context=MetaData(request_time=received, query=query),
+            results=results,
         )
 
 
@@ -149,11 +157,13 @@ def read_platforms(request: Request, query: str = "SELECT * FROM self;"):
         results = platforms.sql(query).to_dicts()
     except Exception as exc:
         return Error(
-            context=MetaData(request_time=received, query=query), error=str(exc)
+            context=MetaData(request_time=received, query=query),
+            error=str(exc),
         )
     else:
         return Response(
-            context=MetaData(request_time=received, query=query), results=results
+            context=MetaData(request_time=received, query=query),
+            results=results,
         )
 
 
@@ -165,11 +175,13 @@ def read_station_points(request: Request, query: str = "SELECT * FROM self;"):
         results = station_points.sql(query).to_dicts()
     except Exception as exc:
         return Error(
-            context=MetaData(request_time=received, query=query), error=str(exc)
+            context=MetaData(request_time=received, query=query),
+            error=str(exc),
         )
     else:
         return Response(
-            context=MetaData(request_time=received, query=query), results=results
+            context=MetaData(request_time=received, query=query),
+            results=results,
         )
 
 
@@ -185,11 +197,13 @@ def read_disruption_by_modes(request: Request, query: str = ",".join(disrupted_m
         results = [rm.model_dump() for rm in result_models]
     except Exception as exc:
         return Error(
-            context=MetaData(request_time=received, query=query), error=str(exc)
+            context=MetaData(request_time=received, query=query),
+            error=str(exc),
         )
     else:
         return Response(
-            context=MetaData(request_time=received, query=query), results=results
+            context=MetaData(request_time=received, query=query),
+            results=results,
         )
 
 
@@ -205,11 +219,13 @@ def read_route_by_modes(request: Request, query: str = "tube"):
         results = [rm.model_dump() for rm in result_models]
     except Exception as exc:
         return Error(
-            context=MetaData(request_time=received, query=query), error=str(exc)
+            context=MetaData(request_time=received, query=query),
+            error=str(exc),
         )
     else:
         return Response(
-            context=MetaData(request_time=received, query=query), results=results
+            context=MetaData(request_time=received, query=query),
+            results=results,
         )
 
 
@@ -222,21 +238,25 @@ def read_route_sequence_by_line_direction(request: Request, line: str, direction
         err_msg = f"Received unknown line: {line!r}. Choose from: {arrivable_line_names} or {bus_lines}"
         assert line in arrivable_line_names or line in bus_lines, err_msg
         result = tube.fetch.line.route_sequence_by_id_direction(
-            id=line, direction=direction
+            id=line,
+            direction=direction,
         ).model_dump()
     except Exception as exc:
         return Error(
-            context=MetaData(request_time=received, query=query), error=str(exc)
+            context=MetaData(request_time=received, query=query),
+            error=str(exc),
         )
     else:
         return Response(
-            context=MetaData(request_time=received, query=query), results=[result]
+            context=MetaData(request_time=received, query=query),
+            results=[result],
         )
 
 
 @app.get("/arrivals-by-lines")
 def read_arrivals_by_lines(
-    request: Request, query: str = ",".join(arrivable_line_names)
+    request: Request,
+    query: str = ",".join(arrivable_line_names),
 ):
     print(f"Received {query=}")
     received = time_now()
@@ -248,17 +268,21 @@ def read_arrivals_by_lines(
         results = [rm.model_dump() for rm in result_models]
     except Exception as exc:
         return Error(
-            context=MetaData(request_time=received, query=query), error=str(exc)
+            context=MetaData(request_time=received, query=query),
+            error=str(exc),
         )
     else:
         return Response(
-            context=MetaData(request_time=received, query=query), results=results
+            context=MetaData(request_time=received, query=query),
+            results=results,
         )
 
 
 @app.get("/arrivals-by-station")
 def read_arrivals_by_station(
-    request: Request, query: str, lines: str = ",".join(arrivable_line_names)
+    request: Request,
+    query: str,
+    lines: str = ",".join(arrivable_line_names),
 ):
     print(f"Received {query=}")
     received = time_now()
@@ -267,16 +291,19 @@ def read_arrivals_by_station(
             err_msg = f"Received unknown line: {line_csv!r}. Choose from: {arrivable_line_names}"
             assert line_csv in arrivable_line_names, err_msg
         result_models = tube.fetch.line.arrivals_by_ids_stop(
-            ids=lines, stopPointId=query
+            ids=lines,
+            stopPointId=query,
         )
         results = [rm.model_dump() for rm in result_models]
     except Exception as exc:
         return Error(
-            context=MetaData(request_time=received, query=query), error=str(exc)
+            context=MetaData(request_time=received, query=query),
+            error=str(exc),
         )
     else:
         return Response(
-            context=MetaData(request_time=received, query=query), results=results
+            context=MetaData(request_time=received, query=query),
+            results=results,
         )
 
 

@@ -5,7 +5,7 @@ import { fetchArrivals, getRelevantArrivals, getRouteDirection } from './planner
 // Function to build the graph of the tube network using component stations
 const buildNetworkGraph = (stations, routeSequenceData) => {
   const graph = {};
-  
+
   stations.forEach(station => {
     station.componentStations.forEach(componentId => {
       graph[componentId] = {};
@@ -58,14 +58,14 @@ const getJourneyDetails = async (path, graph, stations, routeSequenceData) => {
     const originId = path[i];
     const destinationId = path[i + 1];
     const line = graph[originId][destinationId];
-    
+
     const origin = stations.find(s => s.componentStations.includes(originId));
     const destination = stations.find(s => s.componentStations.includes(destinationId));
-    
+
     const arrivals = await fetchArrivals([originId]);
     const relevantArrivals = getRelevantArrivals(arrivals, [line]);
     const direction = getRouteDirection({id: originId}, {id: destinationId}, line, routeSequenceData);
-    
+
     journeySegments.push({
       origin: origin.name,
       destination: destination.name,
@@ -86,10 +86,10 @@ const findComponentStations = (station, stations) => {
 // Main function to plan a multi-line journey
 export const planMultiLineJourney = async (origin, destination, stations, routeSequenceData) => {
   const graph = buildNetworkGraph(stations, routeSequenceData);
-  
+
   const originComponents = findComponentStations(origin, stations);
   const destinationComponents = findComponentStations(destination, stations);
-  
+
   let shortestPath = null;
   let shortestLength = Infinity;
 
@@ -102,13 +102,13 @@ export const planMultiLineJourney = async (origin, destination, stations, routeS
       }
     }
   }
-  
+
   if (!shortestPath) {
     throw new Error("No valid path found between the selected stations.");
   }
 
   const journeyDetails = await getJourneyDetails(shortestPath, graph, stations, routeSequenceData);
-  
+
   return {
     path: shortestPath,
     segments: journeyDetails
