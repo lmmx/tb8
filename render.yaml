@@ -10,3 +10,6 @@ services:
     buildFilter:
       ignoredPaths:
         - app/**
+    envVars:
+    - key: POETRY_VERSION
+      value: "2.1.2"
