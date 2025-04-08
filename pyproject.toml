@@ -27,3 +27,6 @@ version = "0.1.2"
 
 [project.scripts]
 serve = "tb8.main:serve"
+
+[tool.poetry.plugins."console_scripts"]
+"serve" = "tb8.main:serve"
