@@ -1,2 +1,2 @@
-[env]
+[build.env]
 NIXPACKS_POETRY_VERSION = "2.1.2"
