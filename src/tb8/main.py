@@ -32,7 +32,7 @@ station_centroids = (
             pl.col("Level").eq(0),
         ],
     )
-    .groupby("StationUniqueId")
+    .group_by("StationUniqueId")
     .agg(
         [
             pl.col("Lat").mean(),
