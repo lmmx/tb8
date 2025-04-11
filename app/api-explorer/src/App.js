@@ -3,7 +3,7 @@ import { MapContainer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-fullscreen/styles.css';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from './components/MapContent';
-import { fetchStations, fetchCentroids, fetchTubeDisruptions, fetchRouteData } from './utils/api_functions';
+import { API_BASE_URL, fetchStations, fetchCentroids, fetchTubeDisruptions, fetchRouteData } from './utils/api_functions';
 import LoadingSplashScreen from './components/LoadingSplashScreen';
 import JourneyPlanner from './components/JourneyPlanner';
 import MapContent from './components/MapContent';
@@ -44,7 +44,7 @@ export default function App() {
 
         const checkServerAwake = async () => {
           updateStep('serverAwake', 'loading');
-          await fetch('https://tb8.onrender.com/');
+          await fetch(API_BASE_URL);
           updateStep('serverAwake', 'complete');
         };
 

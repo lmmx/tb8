@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://tb8.onrender.com';
+const API_BASE_URL = 'https://tb8-production.up.railway.app';
 
 export const fetchStations = async () => {
   const response = await fetch(`${API_BASE_URL}/stations?query=${encodeURIComponent('SELECT StationUniqueId, StationName FROM self ORDER BY StationName;')}`);
