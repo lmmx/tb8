@@ -2,4 +2,4 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "serve"
+startCommand = "python -c 'from tb8.main import serve; serve()'"
