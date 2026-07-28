@@ -51,7 +51,7 @@ station_centroids = station_centroids.join(
 stations = stations.join(station_centroids, on="StationUniqueId")
 
 modes = {mode.ModeName: mode for mode in tube.fetch.line.meta_modes()}
-undisrupted_modes = "interchange-keep-sitting,interchange-secure,walking".split(",")
+undisrupted_modes = ["interchange-keep-sitting", "interchange-secure", "walking"]
 disrupted_modes = [m for m in modes if m not in undisrupted_modes]
 
 bus_lines = [rm.Id for rm in tube.fetch.line.route_by_modes(modes="bus")]
